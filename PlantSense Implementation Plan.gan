@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="PlantSense Implementation Plan" company="" webLink="" view-date="2026-09-01" view-index="0" gantt-divider-location="744" resource-divider-location="360" version="3.3.3311" locale="en_US">
+    <description><![CDATA[Sequential implementation schedule for the PlantSense Monitoring System mobile prototype. Every phase begins after the final milestone of the previous phase. The plan includes Flutter development for Android and iOS, secure AI image analysis, user accounts, plant and care management, analytics, testing, role assignments, and continuous completion of the graduation thesis. Physical IoT cameras and environmental sensors remain future work.]]></description>
+    <view zooming-state="default:9" id="gantt-chart">
+        <field id="tpd3" name="Name" width="383" order="0"/>
+        <field id="tpd4" name="Begin date" width="58" order="1"/>
+        <field id="tpd5" name="End date" width="55" order="2"/>
+        <field id="tpd6" name="Duration" width="35" order="3"/>
+        <field id="tpd8" name="Coordinator" width="127" order="4"/>
+        <field id="tpd9" name="Predecessors" width="70" order="5"/>
+        <option id="filter.completedTasks" value="false"/>
+        <option id="filter.dueTodayTasks" value="false"/>
+        <option id="filter.overdueTasks" value="false"/>
+        <option id="filter.inProgressTodayTasks" value="false"/>
+        <timeline><![CDATA[6]]></timeline>
+        <option id="color.recent"><![CDATA[#355e3b #6b8f71 #79a6c9 #8d65a8 #d08a32 #3f7fbf #c43b3b]]></option>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Name" width="220" order="0"/>
+        <field id="1" name="Default role" width="210" order="1"/>
+    </view>
+    <!-- -->
+    <calendars>
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="1"/>
+            <only-show-weekends value="false"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="0" uid="a0000000000000000000000000000000" name="Phase 1: Planning and System Design" color="#355e3b" meeting="false" project="true" start="2026-09-18" duration="5" complete="0" expand="true">
+            <task id="10" uid="a000000000000000000000000000000a" name="Project kickoff and approved scope confirmation" color="#355e3b" meeting="true" start="2026-09-18" duration="0" complete="0" expand="true">
+                <depend id="11" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="11" uid="a000000000000000000000000000000b" name="Define MVP requirements, user stories and acceptance criteria" color="#355e3b" meeting="false" start="2026-09-18" duration="2" complete="0" expand="true">
+                <depend id="15" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="12" uid="a000000000000000000000000000000c" name="Design mobile wireframes and navigation flow" color="#355e3b" meeting="false" start="2026-09-18" duration="5" complete="0" expand="true">
+                <depend id="15" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="13" uid="a000000000000000000000000000000d" name="Define app architecture, database schema and API contracts" color="#355e3b" meeting="false" start="2026-09-18" duration="5" complete="0" expand="true">
+                <depend id="15" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="14" uid="a000000000000000000000000000000e" name="Update thesis scope, requirements and system design sections" color="#355e3b" meeting="false" start="2026-09-18" duration="5" complete="0" expand="true">
+                <depend id="15" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="15" uid="a000000000000000000000000000000f" name="Milestone 1: Planning and design approved" color="#355e3b" meeting="true" start="2026-09-25" duration="0" complete="0" expand="true">
+                <depend id="1" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="1" uid="a0000000000000000000000000000001" name="Phase 2: Flutter Foundation and User Accounts" color="#6b8f71" meeting="false" project="true" start="2026-09-25" duration="5" complete="0" expand="true">
+            <task id="20" uid="a0000000000000000000000000000014" name="Initialize Flutter project, repository and shared architecture" color="#6b8f71" meeting="false" start="2026-09-25" duration="2" complete="0" expand="true">
+                <depend id="22" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="21" uid="a0000000000000000000000000000015" name="Configure backend, database and image storage" color="#6b8f71" meeting="false" start="2026-09-25" duration="3" complete="0" expand="true">
+                <depend id="22" type="2" difference="0" hardness="Strong"/>
+                <depend id="23" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="22" uid="a0000000000000000000000000000016" name="Implement registration, login and password recovery" color="#6b8f71" meeting="false" start="2026-09-30" duration="2" complete="0" expand="true">
+                <depend id="25" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="23" uid="a0000000000000000000000000000017" name="Implement Admin, Farmer and Viewer access control" color="#6b8f71" meeting="false" start="2026-09-30" duration="2" complete="0" expand="true">
+                <depend id="25" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="24" uid="a0000000000000000000000000000018" name="Create reusable UI theme, components and navigation shell" color="#6b8f71" meeting="false" start="2026-09-25" duration="5" complete="0" expand="true">
+                <depend id="25" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="25" uid="a0000000000000000000000000000019" name="Milestone 2: Application foundation ready" color="#6b8f71" meeting="true" start="2026-10-02" duration="0" complete="0" expand="true">
+                <depend id="2" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="2" uid="a0000000000000000000000000000002" name="Phase 3: Plant Profiles and Image Tracking" color="#79a6c9" meeting="false" project="true" start="2026-10-02" duration="5" complete="0" expand="true">
+            <task id="30" uid="a000000000000000000000000000001e" name="Implement plant profile CRUD and species selection" color="#79a6c9" meeting="false" start="2026-10-02" duration="3" complete="0" expand="true">
+                <depend id="33" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="31" uid="a000000000000000000000000000001f" name="Implement photo capture, gallery selection and validation" color="#79a6c9" meeting="false" start="2026-10-02" duration="2" complete="0" expand="true">
+                <depend id="32" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="32" uid="a0000000000000000000000000000020" name="Store timestamped images and analysis metadata" color="#79a6c9" meeting="false" start="2026-10-06" duration="2" complete="0" expand="true">
+                <depend id="33" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="33" uid="a0000000000000000000000000000021" name="Build image timeline, comparison view and observation notes" color="#79a6c9" meeting="false" start="2026-10-08" duration="1" complete="0" expand="true">
+                <depend id="35" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="34" uid="a0000000000000000000000000000022" name="Document plant and image tracking implementation" color="#79a6c9" meeting="false" start="2026-10-02" duration="5" complete="0" expand="true">
+                <depend id="35" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="35" uid="a0000000000000000000000000000023" name="Milestone 3: Plant tracking module ready" color="#79a6c9" meeting="true" start="2026-10-09" duration="0" complete="0" expand="true">
+                <depend id="3" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="3" uid="a0000000000000000000000000000003" name="Phase 4: AI Image Analysis and Diagnosis" color="#8d65a8" meeting="false" project="true" start="2026-10-09" duration="10" complete="0" expand="true">
+            <task id="40" uid="a0000000000000000000000000000028" name="Design AI prompts and structured diagnostic response" color="#8d65a8" meeting="false" start="2026-10-09" duration="2" complete="0" expand="true">
+                <depend id="41" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="41" uid="a0000000000000000000000000000029" name="Implement secure backend endpoint for the AI model" color="#8d65a8" meeting="false" start="2026-10-13" duration="3" complete="0" expand="true">
+                <depend id="42" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="42" uid="a000000000000000000000000000002a" name="Integrate Flutter image analysis workflow" color="#8d65a8" meeting="false" start="2026-10-16" duration="3" complete="0" expand="true">
+                <depend id="43" type="2" difference="0" hardness="Strong"/>
+                <depend id="44" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="43" uid="a000000000000000000000000000002b" name="Build diagnosis result screen and history handling" color="#8d65a8" meeting="false" start="2026-10-21" duration="2" complete="0" expand="true">
+                <depend id="46" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="44" uid="a000000000000000000000000000002c" name="Evaluate and tune outputs using labeled plant images" color="#8d65a8" meeting="false" start="2026-10-21" duration="2" complete="0" expand="true">
+                <depend id="46" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="45" uid="a000000000000000000000000000002d" name="Document AI method, response schema and evaluation approach" color="#8d65a8" meeting="false" start="2026-10-16" duration="5" complete="0" expand="true">
+                <depend id="46" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="46" uid="a000000000000000000000000000002e" name="Milestone 4: AI diagnosis module ready" color="#8d65a8" meeting="true" start="2026-10-23" duration="0" complete="0" expand="true">
+                <depend id="4" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="4" uid="a0000000000000000000000000000004" name="Phase 5: Care, Notifications and Plant Encyclopedia" color="#d08a32" meeting="false" project="true" start="2026-10-23" duration="6" complete="0" expand="true">
+            <task id="50" uid="a0000000000000000000000000000032" name="Implement species-based care schedules and activity logs" color="#d08a32" meeting="false" start="2026-10-23" duration="3" complete="0" expand="true">
+                <depend id="51" type="2" difference="0" hardness="Strong"/>
+                <depend id="55" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="51" uid="a0000000000000000000000000000033" name="Add in-app alerts and scheduled device notifications" color="#d08a32" meeting="false" start="2026-10-28" duration="2" complete="0" expand="true">
+                <depend id="55" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="52" uid="a0000000000000000000000000000034" name="Build public Plant Encyclopedia browse and search screens" color="#d08a32" meeting="false" start="2026-10-23" duration="4" complete="0" expand="true">
+                <depend id="53" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="53" uid="a0000000000000000000000000000035" name="Implement Admin encyclopedia content management" color="#d08a32" meeting="false" start="2026-10-29" duration="2" complete="0" expand="true">
+                <depend id="55" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="54" uid="a0000000000000000000000000000036" name="Document care, notification and encyclopedia modules" color="#d08a32" meeting="false" start="2026-10-23" duration="6" complete="0" expand="true">
+                <depend id="55" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="55" uid="a0000000000000000000000000000037" name="Milestone 5: Care and encyclopedia modules ready" color="#d08a32" meeting="true" start="2026-11-02" duration="0" complete="0" expand="true">
+                <depend id="5" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="5" uid="a0000000000000000000000000000005" name="Phase 6: Analytics, Reports and Full Integration" color="#3f7fbf" meeting="false" project="true" start="2026-11-02" duration="5" complete="0" expand="true">
+            <task id="60" uid="a000000000000000000000000000003c" name="Build dashboard with plant health and care metrics" color="#3f7fbf" meeting="false" start="2026-11-02" duration="3" complete="0" expand="true">
+                <depend id="62" type="2" difference="0" hardness="Strong"/>
+                <depend id="63" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="61" uid="a000000000000000000000000000003d" name="Add date filters, comparisons and growth charts" color="#3f7fbf" meeting="false" start="2026-11-02" duration="3" complete="0" expand="true">
+                <depend id="63" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="62" uid="a000000000000000000000000000003e" name="Implement PDF and CSV report export" color="#3f7fbf" meeting="false" start="2026-11-05" duration="2" complete="0" expand="true">
+                <depend id="65" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="63" uid="a000000000000000000000000000003f" name="Complete end-to-end feature and data integration" color="#3f7fbf" meeting="false" start="2026-11-05" duration="2" complete="0" expand="true">
+                <depend id="65" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="64" uid="a0000000000000000000000000000040" name="Document analytics, reports and integration results" color="#3f7fbf" meeting="false" start="2026-11-02" duration="5" complete="0" expand="true">
+                <depend id="65" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="65" uid="a0000000000000000000000000000041" name="Milestone 6: Beta release ready" color="#3f7fbf" meeting="true" start="2026-11-09" duration="0" complete="0" expand="true">
+                <depend id="6" type="2" difference="0" hardness="Strong"/>
+            </task>
+        </task>
+        <task id="6" uid="a0000000000000000000000000000006" name="Phase 7: Testing, Thesis Completion and Delivery" color="#c43b3b" meeting="false" project="true" start="2026-11-09" duration="9" complete="0" expand="true">
+            <task id="70" uid="a0000000000000000000000000000046" name="Execute functional, usability, security and compatibility tests" color="#c43b3b" meeting="false" start="2026-11-09" duration="3" complete="0" expand="true">
+                <depend id="72" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="71" uid="a0000000000000000000000000000047" name="Evaluate AI accuracy and write the final test results" color="#c43b3b" meeting="false" start="2026-11-09" duration="3" complete="0" expand="true">
+                <depend id="72" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="72" uid="a0000000000000000000000000000048" name="Fix defects and optimize application performance" color="#c43b3b" meeting="false" start="2026-11-12" duration="3" complete="0" expand="true">
+                <depend id="73" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="73" uid="a0000000000000000000000000000049" name="Produce Android release and validate iOS cloud build" color="#c43b3b" meeting="false" start="2026-11-17" duration="1" complete="0" expand="true">
+                <depend id="76" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="74" uid="a000000000000000000000000000004a" name="Finalize thesis chapters, diagrams, references and appendices" color="#c43b3b" meeting="false" start="2026-11-09" duration="8" complete="0" expand="true">
+                <depend id="76" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="75" uid="a000000000000000000000000000004b" name="Prepare user guide, presentation and demonstration data" color="#c43b3b" meeting="false" start="2026-11-12" duration="5" complete="0" expand="true">
+                <depend id="76" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="76" uid="a000000000000000000000000000004c" name="Complete source package, final review and demo rehearsal" color="#c43b3b" meeting="false" start="2026-11-19" duration="1" complete="0" expand="true">
+                <depend id="77" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="77" uid="a000000000000000000000000000004d" name="Milestone 7: Final project submission" color="#c43b3b" meeting="true" start="2026-11-20" duration="0" complete="0" expand="true"/>
+        </task>
+    </tasks>
+    <resources>
+        <resource id="0" name="Mariam Khalaf Al-Ruwaili" function="0" contacts="" phone=""/>
+        <resource id="1" name="Ghadi Sultan Alouthah" function="1" contacts="" phone=""/>
+        <resource id="2" name="Alanoud Alkhmees" function="2" contacts="" phone=""/>
+        <resource id="3" name="Raghad Khaled Al-Ruwaili" function="3" contacts="" phone=""/>
+        <resource id="4" name="Aryam Saeed Al-Sharari" function="4" contacts="" phone=""/>
+    </resources>
+    <allocations>
+        <allocation task-id="10" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="14" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="15" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="34" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="45" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="54" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="64" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="74" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="77" resource-id="0" function="0" responsible="true" load="100.0"/>
+        <allocation task-id="20" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="22" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="30" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="31" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="42" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="50" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="51" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="61" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="62" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="72" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="73" resource-id="1" function="1" responsible="true" load="100.0"/>
+        <allocation task-id="13" resource-id="2" function="2" responsible="true" load="100.0"/>
+        <allocation task-id="21" resource-id="2" function="2" responsible="true" load="100.0"/>
+        <allocation task-id="23" resource-id="2" function="2" responsible="true" load="100.0"/>
+        <allocation task-id="32" resource-id="2" function="2" responsible="true" load="100.0"/>
+        <allocation task-id="41" resource-id="2" function="2" responsible="true" load="100.0"/>
+        <allocation task-id="53" resource-id="2" function="2" responsible="true" load="100.0"/>
+        <allocation task-id="63" resource-id="2" function="2" responsible="true" load="100.0"/>
+        <allocation task-id="76" resource-id="2" function="2" responsible="true" load="100.0"/>
+        <allocation task-id="11" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="25" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="35" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="40" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="44" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="46" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="55" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="65" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="70" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="71" resource-id="3" function="3" responsible="true" load="100.0"/>
+        <allocation task-id="12" resource-id="4" function="4" responsible="true" load="100.0"/>
+        <allocation task-id="24" resource-id="4" function="4" responsible="true" load="100.0"/>
+        <allocation task-id="33" resource-id="4" function="4" responsible="true" load="100.0"/>
+        <allocation task-id="43" resource-id="4" function="4" responsible="true" load="100.0"/>
+        <allocation task-id="52" resource-id="4" function="4" responsible="true" load="100.0"/>
+        <allocation task-id="60" resource-id="4" function="4" responsible="true" load="100.0"/>
+        <allocation task-id="75" resource-id="4" function="4" responsible="true" load="100.0"/>
+    </allocations>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+    <roles>
+        <role id="0" name="Project Coordination and Documentation"/>
+        <role id="1" name="Flutter Development"/>
+        <role id="2" name="Backend and Database"/>
+        <role id="3" name="AI Validation and Testing"/>
+        <role id="4" name="UI UX and Analytics"/>
+    </roles>
+</project>
