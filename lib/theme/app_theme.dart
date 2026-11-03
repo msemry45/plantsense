@@ -215,7 +215,7 @@ class SVPGLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final assetPath = isDarkBackground
         ? 'assets/branding/svpg-logo-white-lower-leaves.png'
-        : 'assets/branding/svpg-logo-generated.png';
+        : 'assets/branding/svpg_official_logo.png';
 
     return Image.asset(
       assetPath,

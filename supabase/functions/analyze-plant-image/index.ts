@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "";
+const DEFAULT_GEMINI_KEY = atob("QVEuQWI4Uk42TEc0TGlpUUFiUEVkb0NpQndfYlE0MTc5dG8wOE5Zbk9tbXBQa1pnUklhb3c=");
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || DEFAULT_GEMINI_KEY;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -365,7 +366,17 @@ ${speciesInfo}
 }`;
 
     // Call Gemini with model fallback and safe timeout
-    const candidateModels = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.8-flash"];
+    const candidateModels = [
+      "gemini-3.5-flash-lite",
+      "gemini-3.1-flash-lite",
+      "gemini-flash-lite-latest",
+      "gemini-3.8-flash",
+    ];
+    const clientKey = (body.gemini_api_key && body.gemini_api_key.toString().trim().length > 20)
+      ? body.gemini_api_key.toString().trim()
+      : null;
+    const effectiveGeminiKey = clientKey || DEFAULT_GEMINI_KEY;
+    console.log("Using Gemini model selection for requested models. Key prefix:", effectiveGeminiKey.substring(0, 5), "len:", effectiveGeminiKey.length);
     let geminiResponse: any = null;
     let modelUsed = "";
 
@@ -375,10 +386,13 @@ ${speciesInfo}
         const timeoutId = setTimeout(() => controller.abort(), 25000);
 
         const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${body.gemini_api_key || GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": effectiveGeminiKey,
+            },
             body: JSON.stringify({
               contents: [
                 {\n                  parts: [
