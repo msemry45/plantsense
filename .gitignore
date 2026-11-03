@@ -41,17 +41,39 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Documents & Presentations
 *.md
 *.pdf
 *.docx
+*.pptx
+*.gan
+!docs/**/*.md
+!README.md
+
+# Secrets & Environment
 .env
 .env.test
 .env*
-!docs/**/*.md
-!README.md
+!.env.example
+
+# Build Releases & Temp Files
 release/
 *.apk
 tmp/
 tmp_edge.json
 .codex_review_plantsense_20260915/
 graphify-out/
+
+# Internal scratch scripts & live test harnesses
+create_users.dart
+test_rls.dart
+test_rls.sql
+test_live/
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# Redundant schema dumps & planning screenshots
+*schema*.*
+PlantSense Implementation Plan*
