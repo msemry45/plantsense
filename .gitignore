@@ -45,3 +45,13 @@ app.*.map.json
 *.pdf
 *.docx
 .env
+.env.test
+.env*
+!docs/**/*.md
+!README.md
+release/
+*.apk
+tmp/
+tmp_edge.json
+.codex_review_plantsense_20260915/
+graphify-out/

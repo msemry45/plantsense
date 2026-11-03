@@ -1,11 +1,24 @@
-import 'package:supabase/supabase.dart';
+import 'dart:io';
+import 'package:dotenv/dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
+  final env = DotEnv(includePlatformEnvironment: true)..load();
+  final supabaseUrl = env['SUPABASE_URL'];
+  final supabaseKey = env['SUPABASE_ANON_KEY'];
+
+  if (supabaseUrl == null || supabaseKey == null) {
+    stderr.writeln('Missing Supabase credentials in .env');
+    exit(1);
+  }
+
   final client = SupabaseClient(
-    'https://tpsguqbyqlvsxrshwcks.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwc2d1cWJ5cWx2c3hyc2h3Y2tzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NjkzMjYsImV4cCI6MjEwNjA0NTMyNn0.o3OZuatIiUlcdbdxCC7KUVwOvpOeNEH3geKU4LFKl-4',
+    supabaseUrl,
+    supabaseKey,
     authOptions: const AuthClientOptions(authFlowType: AuthFlowType.implicit),
   );
+
+  stdout.writeln('Creating default seed accounts if they do not exist...');
 
   try {
     // Admin
@@ -14,9 +27,9 @@ void main() async {
       password: 'password123',
       data: {'username': 'Manager', 'full_name': 'Manager Admin'},
     );
-    print('Manager created');
+    stdout.writeln('Manager created');
   } catch (e) {
-    print('Manager error: $e');
+    stderr.writeln('Manager error: $e');
   }
 
   try {
@@ -26,8 +39,8 @@ void main() async {
       password: 'password123',
       data: {'username': 'User1', 'full_name': 'User One'},
     );
-    print('User created');
+    stdout.writeln('User created');
   } catch (e) {
-    print('User error: $e');
+    stderr.writeln('User error: $e');
   }
 }

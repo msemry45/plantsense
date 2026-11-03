@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'l10n/app_localizations.dart';
 import 'router.dart';
 import 'services/auth_service.dart';
+import 'services/locale_service.dart';
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +16,8 @@ Future<void> main() async {
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
+
+  await LocaleService.init();
 
   final authService = AuthService();
 
@@ -25,13 +31,27 @@ class SVPGApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'PlantSense SVPG',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
-      routerConfig: createRouter(authService),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleService.localeNotifier,
+      builder: (context, locale, _) {
+        return MaterialApp.router(
+          title: 'SVPG',
+          theme: AppTheme.lightTheme,
+          debugShowCheckedModeBanner: false,
+          locale: locale,
+          supportedLocales: const [
+            Locale('ar'),
+            Locale('en'),
+          ],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          routerConfig: createRouter(authService),
+        );
+      },
     );
   }
 }

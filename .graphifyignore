@@ -1,0 +1,32 @@
+# Secrets
+.env
+.env.test
+.env*
+*.env
+
+# Build outputs & caches
+build/
+.dart_tool/
+tmp/
+graphify-out/
+.codex_review_plantsense_20260915/
+.idea/
+.vscode/
+
+# Native platform build harnesses
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+# Heavy binary media & documents
+assets/
+*.png
+*.svg
+*.zip
+*.docx
+*.pdf
+*.gan
+~$*
