@@ -5,16 +5,20 @@ import '../../models/species.dart';
 import '../../models/plant_image.dart';
 import '../../models/observation_note.dart';
 import '../../models/diagnosis.dart';
+import '../../models/care_task.dart';
 import '../../services/plant_service.dart';
 import '../../services/plant_image_service.dart';
 import '../../services/observation_note_service.dart';
 import '../../services/diagnosis_service.dart';
+import '../../services/care_task_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/language_toggle_button.dart';
 import 'diagnosis_result_screen.dart';
 import 'diagnosis_history_screen.dart';
+import 'care_tasks_screen.dart';
 
 class PlantDetailsScreen extends StatefulWidget {
   final String plantId;
@@ -23,6 +27,7 @@ class PlantDetailsScreen extends StatefulWidget {
   final ObservationNoteService? noteService;
   final AuthService? authService;
   final DiagnosisService? diagnosisService;
+  final CareTaskService? careTaskService;
 
   const PlantDetailsScreen({
     super.key,
@@ -32,6 +37,7 @@ class PlantDetailsScreen extends StatefulWidget {
     this.noteService,
     this.authService,
     this.diagnosisService,
+    this.careTaskService,
   });
 
   @override
@@ -43,11 +49,13 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
   late final PlantImageService _imageService;
   late final ObservationNoteService _noteService;
   late final DiagnosisService _diagnosisService;
+  late final CareTaskService _careTaskService;
   late final AuthService _authService;
 
   Plant? _plant;
   List<PlantImage> _recentImages = [];
   List<ObservationNote> _recentNotes = [];
+  List<CareTask> _careTasks = [];
   Diagnosis? _latestDiagnosis;
   bool _isAnalyzingLeaf = false;
 
@@ -61,6 +69,7 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
     _imageService = widget.plantImageService ?? PlantImageService();
     _noteService = widget.noteService ?? ObservationNoteService();
     _diagnosisService = widget.diagnosisService ?? DiagnosisService();
+    _careTaskService = widget.careTaskService ?? CareTaskService();
     _authService = widget.authService ?? AuthService();
     _loadPlantData();
   }
@@ -88,11 +97,17 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
         diagnosis = await _diagnosisService.getLatestDiagnosis(widget.plantId);
       } catch (_) {}
 
+      List<CareTask> careTasks = [];
+      try {
+        careTasks = await _careTaskService.getCareTasksForPlant(widget.plantId);
+      } catch (_) {}
+
       if (mounted) {
         setState(() {
           _plant = plant;
           _recentImages = images;
           _recentNotes = notes;
+          _careTasks = careTasks;
           _latestDiagnosis = diagnosis;
           _isLoading = false;
         });
@@ -261,6 +276,10 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
                 _buildCareConditionsCard(plant.species!),
                 const SizedBox(height: 20),
               ],
+
+              // Care Tasks & Schedule Card (Milestone 5)
+              _buildCareTasksCard(plant),
+              const SizedBox(height: 20),
 
               // Photos Timeline Section
               _buildPhotosSection(plant),
@@ -640,6 +659,139 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
     );
   }
 
+  Widget _buildCareTasksCard(Plant plant) {
+    final l10n = context.l10n;
+    final isArabic = l10n.isArabic;
+    final pending = _careTasks.where((t) => t.isPending).toList();
+    final overdueCount = pending.where((t) => t.isOverdue).length;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: overdueCount > 0 ? AppColors.error.withOpacity(0.4) : AppColors.lightGreen.withAlpha(140),
+          width: overdueCount > 0 ? 1.5 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: overdueCount > 0 ? const Color(0xFFFFEBEE) : AppColors.lightGreen,
+                child: Icon(
+                  Icons.task_alt_rounded,
+                  color: overdueCount > 0 ? AppColors.error : AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  l10n.careScheduleTitle,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.dark,
+                  ),
+                ),
+              ),
+              if (overdueCount > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isArabic ? '$overdueCount متأخرة' : '$overdueCount Overdue',
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ] else if (pending.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightGreen,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isArabic ? '${pending.length} قادمة' : '${pending.length} Upcoming',
+                    style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (pending.isEmpty) ...[
+            Text(
+              isArabic ? 'لا توجد مهام عناية معلقة للنبتة حالياً.' : 'No pending care tasks for this plant.',
+              style: TextStyle(fontSize: 13, color: AppColors.dark.withOpacity(0.7)),
+            ),
+          ] else ...[
+            ...pending.take(2).map((task) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  Icon(
+                    task.isOverdue ? Icons.warning_amber_rounded : Icons.schedule,
+                    size: 16,
+                    color: task.isOverdue ? AppColors.error : AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: task.isOverdue ? AppColors.error : AppColors.dark,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    task.dueAt != null
+                        ? '${task.dueAt!.month}/${task.dueAt!.day}'
+                        : '',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            )),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CareTasksScreen(
+                      plant: plant,
+                      isViewer: !_canMutate,
+                    ),
+                  ),
+                );
+                _loadPlantData();
+              },
+              icon: const Icon(Icons.calendar_month_outlined, size: 16),
+              label: Text(isArabic ? 'فتح جدول العناية والمهام' : 'Open Care Schedule & Tasks'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 42),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPhotosSection(Plant plant) {
     final l10n = context.l10n;
     return Column(
@@ -915,6 +1067,16 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
           _latestDiagnosis = diag;
         });
 
+        if (diag.needsAttention) {
+          NotificationService().createDiagnosisAlert(
+            plantId: plant.id,
+            plantName: plant.name,
+            diagnosisId: diag.id,
+            severity: diag.severity,
+            isArabic: l10n.isArabic,
+          );
+        }
+
         // Open full result screen
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -932,8 +1094,14 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 7),
             content: Text(
               '${l10n.aiAnalysisFailedMessage}\n${e.toString().replaceFirst("Exception: ", "")}',
+            ),
+            action: SnackBarAction(
+              label: l10n.isArabic ? 'إعادة المحاولة' : 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _triggerLeafAnalysis(plant),
             ),
           ),
         );
@@ -1170,9 +1338,13 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
                           builder: (_) => DiagnosisResultScreen(
                             plantName: plant.name,
                             diagnosis: diag,
-                            imageUrl: _recentImages.isNotEmpty
-                                ? _recentImages.first.signedUrl
-                                : null,
+                            imageUrl: () {
+                              try {
+                                return _recentImages.firstWhere((img) => img.id == diag.imageId).signedUrl;
+                              } catch (_) {
+                                return _recentImages.isNotEmpty ? _recentImages.first.signedUrl : null;
+                              }
+                            }(),
                           ),
                         ),
                       );

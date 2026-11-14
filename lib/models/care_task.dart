@@ -1,0 +1,128 @@
+/// Model representing a plant care task aligned with public.care_tasks table schema.
+class CareTask {
+  final String id;
+  final String plantId;
+  final String createdBy;
+  final String title;
+  final String? description;
+  final String taskType; // watering, fertilizing, pruning, pest_control, monitoring, other
+  final DateTime? dueAt;
+  final int? repeatEveryDays;
+  final String status; // pending, completed, overdue, cancelled
+  final DateTime? completedAt;
+  final String? completedBy;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const CareTask({
+    required this.id,
+    required this.plantId,
+    required this.createdBy,
+    required this.title,
+    this.description,
+    this.taskType = 'other',
+    this.dueAt,
+    this.repeatEveryDays,
+    this.status = 'pending',
+    this.completedAt,
+    this.completedBy,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  bool get isCompleted => status == 'completed';
+  bool get isPending => status == 'pending';
+  bool get isOverdue {
+    if (status != 'pending' || dueAt == null) return false;
+    return dueAt!.isBefore(DateTime.now());
+  }
+
+  String localizedTaskType(bool isArabic) {
+    switch (taskType) {
+      case 'watering':
+        return isArabic ? 'ري' : 'Watering';
+      case 'fertilizing':
+        return isArabic ? 'تسميد' : 'Fertilizing';
+      case 'pruning':
+        return isArabic ? 'تقليم' : 'Pruning';
+      case 'pest_control':
+        return isArabic ? 'مكافحة الآفات' : 'Pest Control';
+      case 'monitoring':
+        return isArabic ? 'مراقبة وفحص' : 'Monitoring';
+      default:
+        return isArabic ? 'عناية عامة' : 'General Care';
+    }
+  }
+
+  factory CareTask.fromJson(Map<String, dynamic> json) {
+    return CareTask(
+      id: json['id'] as String,
+      plantId: json['plant_id'] as String,
+      createdBy: (json['created_by'] ?? '') as String,
+      title: json['title'] as String,
+      description: json['description'] as String?,
+      taskType: (json['task_type'] ?? 'other') as String,
+      dueAt: json['due_at'] != null ? DateTime.parse(json['due_at'] as String) : null,
+      repeatEveryDays: json['repeat_every_days'] as int?,
+      status: (json['status'] ?? 'pending') as String,
+      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at'] as String) : null,
+      completedBy: json['completed_by'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'plant_id': plantId,
+      'created_by': createdBy,
+      'title': title,
+      'description': description,
+      'task_type': taskType,
+      'due_at': dueAt?.toIso8601String(),
+      'repeat_every_days': repeatEveryDays,
+      'status': status,
+      'completed_at': completedAt?.toIso8601String(),
+      'completed_by': completedBy,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  CareTask copyWith({
+    String? id,
+    String? plantId,
+    String? createdBy,
+    String? title,
+    String? description,
+    String? taskType,
+    DateTime? dueAt,
+    int? repeatEveryDays,
+    String? status,
+    DateTime? completedAt,
+    String? completedBy,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return CareTask(
+      id: id ?? this.id,
+      plantId: plantId ?? this.plantId,
+      createdBy: createdBy ?? this.createdBy,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      taskType: taskType ?? this.taskType,
+      dueAt: dueAt ?? this.dueAt,
+      repeatEveryDays: repeatEveryDays ?? this.repeatEveryDays,
+      status: status ?? this.status,
+      completedAt: completedAt ?? this.completedAt,
+      completedBy: completedBy ?? this.completedBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}

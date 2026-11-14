@@ -84,4 +84,66 @@ class SpeciesService {
 
     return Species.fromJson(row);
   }
+
+  /// Get all species for admin review (including unpublished drafts)
+  Future<List<Species>> getAllSpeciesForAdmin({String? search}) async {
+    var query = _client.from('species').select();
+
+    if (search != null && search.trim().isNotEmpty) {
+      query = query.ilike('common_name', '%${search.trim()}%');
+    }
+
+    final response = await query.order('created_at', ascending: false);
+    return response.map((row) => Species.fromJson(row)).toList();
+  }
+
+  /// Toggle published status of a species in the encyclopedia (Admin only)
+  Future<Species> toggleSpeciesPublished(String speciesId, bool isPublished) async {
+    final response = await _client
+        .from('species')
+        .update({'is_published': isPublished, 'updated_at': DateTime.now().toIso8601String()})
+        .eq('id', speciesId)
+        .select()
+        .single();
+
+    return Species.fromJson(response);
+  }
+
+  /// Update species details (Admin only)
+  Future<Species> updateSpecies({
+    required String id,
+    String? commonName,
+    String? scientificName,
+    String? description,
+    String? careInstructions,
+    num? idealTemperatureMin,
+    num? idealTemperatureMax,
+    num? idealHumidityMin,
+    num? idealHumidityMax,
+    String? idealLightConditions,
+    bool? isPublished,
+  }) async {
+    final updateData = <String, dynamic>{
+      'updated_at': DateTime.now().toIso8601String(),
+      if (commonName != null) 'common_name': commonName.trim(),
+      if (scientificName != null) 'scientific_name': scientificName.trim(),
+      if (description != null) 'description': description.trim(),
+      if (careInstructions != null) 'care_instructions': careInstructions.trim(),
+      if (idealTemperatureMin != null) 'ideal_temperature_min': idealTemperatureMin,
+      if (idealTemperatureMax != null) 'ideal_temperature_max': idealTemperatureMax,
+      if (idealHumidityMin != null) 'ideal_humidity_min': idealHumidityMin,
+      if (idealHumidityMax != null) 'ideal_humidity_max': idealHumidityMax,
+      if (idealLightConditions != null) 'ideal_light_conditions': idealLightConditions,
+      if (isPublished != null) 'is_published': isPublished,
+    };
+
+    final response = await _client
+        .from('species')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+    return Species.fromJson(response);
+  }
 }

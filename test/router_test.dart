@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plantsense/l10n/app_localizations.dart';
 import 'package:plantsense/models/user_profile.dart';
 import 'package:plantsense/router.dart';
 import 'package:plantsense/services/auth_service.dart';
@@ -28,8 +30,15 @@ class _AuthState extends ChangeNotifier implements AuthService {
   UserProfile? profile;
   @override
   bool isLoading;
+  @override
+  bool isPasswordRecovery;
 
-  _AuthState({this.user, this.profile, this.isLoading = false});
+  _AuthState({
+    this.user,
+    this.profile,
+    this.isLoading = false,
+    this.isPasswordRecovery = false,
+  });
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -156,7 +165,17 @@ void main() {
     addTearDown(auth.dispose);
     router.go('/admin/users');
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(MaterialApp.router(
+      routerConfig: router,
+      locale: const Locale('en'),
+      supportedLocales: const [Locale('en'), Locale('ar')],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+    ));
     await tester.pumpAndSettle();
 
     expect(find.text('Unable to verify your account'), findsOneWidget);
@@ -175,7 +194,17 @@ void main() {
     addTearDown(auth.dispose);
     router.go('/admin/users');
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(MaterialApp.router(
+      routerConfig: router,
+      locale: const Locale('ar'),
+      supportedLocales: const [Locale('en'), Locale('ar')],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+    ));
     await tester.pumpAndSettle();
 
     expect(find.text('تعذر التحقق من الحساب'), findsOneWidget);

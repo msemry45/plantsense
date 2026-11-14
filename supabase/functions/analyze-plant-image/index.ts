@@ -1,8 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const DEFAULT_GEMINI_KEY = atob("QVEuQWI4Uk42TEc0TGlpUUFiUEVkb0NpQndfYlE0MTc5dG8wOE5Zbk9tbXBQa1pnUklhb3c=");
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || DEFAULT_GEMINI_KEY;
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -372,11 +371,20 @@ ${speciesInfo}
       "gemini-flash-lite-latest",
       "gemini-3.8-flash",
     ];
-    const clientKey = (body.gemini_api_key && body.gemini_api_key.toString().trim().length > 20)
-      ? body.gemini_api_key.toString().trim()
-      : null;
-    const effectiveGeminiKey = clientKey || DEFAULT_GEMINI_KEY;
-    console.log("Using Gemini model selection for requested models. Key prefix:", effectiveGeminiKey.substring(0, 5), "len:", effectiveGeminiKey.length);
+    const effectiveGeminiKey = GEMINI_API_KEY;
+    if (!effectiveGeminiKey) {
+      console.error("GEMINI_API_KEY secret is missing in Edge Function environment.");
+      return new Response(
+        JSON.stringify({
+          error: language === "ar"
+            ? "مفتاح Gemini غير معرّف في أسرار السيرفر (GEMINI_API_KEY). يرجى تعيينه في Supabase Dashboard > Project Settings > Secrets."
+            : "Gemini API key is not configured in Supabase Secrets (GEMINI_API_KEY).",
+          retryable: false,
+        }),
+        { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+    console.log("Using Gemini model selection from server secret. Key prefix:", effectiveGeminiKey.substring(0, 5), "len:", effectiveGeminiKey.length);
     let geminiResponse: any = null;
     let modelUsed = "";
 

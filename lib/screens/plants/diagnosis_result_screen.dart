@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/diagnosis.dart';
+import '../../services/diagnosis_service.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 
-class DiagnosisResultScreen extends StatelessWidget {
+class DiagnosisResultScreen extends StatefulWidget {
   final String plantName;
   final Diagnosis diagnosis;
   final String? imageUrl;
@@ -16,9 +17,39 @@ class DiagnosisResultScreen extends StatelessWidget {
   });
 
   @override
+  State<DiagnosisResultScreen> createState() => _DiagnosisResultScreenState();
+}
+
+class _DiagnosisResultScreenState extends State<DiagnosisResultScreen> {
+  String? _effectiveImageUrl;
+  bool _isLoadingImage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _effectiveImageUrl = widget.imageUrl;
+    if (_effectiveImageUrl == null || _effectiveImageUrl!.isEmpty) {
+      _loadImageUrl();
+    }
+  }
+
+  Future<void> _loadImageUrl() async {
+    setState(() => _isLoadingImage = true);
+    final url = await DiagnosisService().getImageUrlForDiagnosis(widget.diagnosis.imageId);
+    if (mounted) {
+      setState(() {
+        _effectiveImageUrl = url;
+        _isLoadingImage = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final isArabic = l10n.isArabic;
+    final diagnosis = widget.diagnosis;
+    final plantName = widget.plantName;
 
     // Status styling
     Color statusBg;
@@ -139,6 +170,87 @@ class DiagnosisResultScreen extends StatelessWidget {
                 ],
               ),
             ),
+
+            // Inspected Leaf Photo Card
+            if (_isLoadingImage) ...[
+              const SizedBox(height: 16),
+              Container(
+                height: 160,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.lightGreen.withAlpha(140)),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              ),
+            ] else if (_effectiveImageUrl != null && _effectiveImageUrl!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  height: 220,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: AppColors.lightGreen),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        _effectiveImageUrl!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(color: AppColors.primary),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) => Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
+                              const SizedBox(height: 8),
+                              Text(
+                                isArabic ? 'صورة الفحص' : 'Inspected photo',
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 12,
+                        right: isArabic ? 12 : null,
+                        left: isArabic ? null : 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.65),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.photo_camera_rounded, size: 14, color: Colors.white),
+                              const SizedBox(width: 6),
+                              Text(
+                                isArabic ? 'صورة الفحص المعتمدة' : 'Inspected Leaf Photo',
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 16),
 

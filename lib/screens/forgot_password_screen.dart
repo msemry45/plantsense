@@ -340,6 +340,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
+              onPressed: () => context.go('/reset-password'),
+              child: Text(
+                l10n.isArabic
+                    ? 'إدخال كلمة المرور الجديدة'
+                    : 'Enter New Password',
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
               onPressed: () => context.go('/login'),
               child: Text(l10n.isArabic ? 'العودة لتسجيل الدخول' : 'Return to Login'),
             ),

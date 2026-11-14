@@ -71,6 +71,17 @@ class AppLocalizations {
   String get resetLinkSentConfirmation => isArabic
       ? 'إذا كان هذا الحساب مسجلاً، فقد تم إرسال رابط الاستعادة إلى بريدك.'
       : 'If this account is registered, a password reset link has been sent.';
+  String get newPassword => isArabic ? 'كلمة المرور الجديدة' : 'New Password';
+  String get confirmNewPassword => isArabic ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password';
+  String get passwordsDoNotMatch => isArabic ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match';
+  String get updatePassword => isArabic ? 'تحديث كلمة المرور' : 'Update Password';
+  String get passwordUpdatedSuccess => isArabic
+      ? 'تم تحديث كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.'
+      : 'Password updated successfully. You can now log in.';
+  String get setNewPasswordTitle => isArabic ? 'تعيين كلمة مرور جديدة' : 'Set New Password';
+  String get setNewPasswordSubtitle => isArabic
+      ? 'أدخل كلمة المرور الجديدة الخاصة بحسابك للمتابعة.'
+      : 'Enter your new account password below to continue.';
 
   // Validation
   String get emailRequired => isArabic ? 'البريد الإلكتروني مطلوب' : 'Email is required';
@@ -323,6 +334,60 @@ class AppLocalizations {
   String selectPhotosToCompare(int count) => isArabic
       ? 'حدد صورتين اثنتين للمقارنة ($count/2 محددة)'
       : 'Select exactly 2 photos to compare ($count/2 selected)';
+
+  // ===========================================================================
+  // M5 — Care Schedule, Notifications & Encyclopedia
+  // ===========================================================================
+  String get careScheduleTitle => isArabic ? 'جدول العناية والمهام' : 'Care Schedule & Tasks';
+  String get upcomingTasks => isArabic ? 'المهام القادمة' : 'Upcoming Tasks';
+  String get overdueTasks => isArabic ? 'مهام متأخرة' : 'Overdue Tasks';
+  String get completedTasks => isArabic ? 'سجل الإنجاز' : 'Completed Tasks';
+  String get addCareTask => isArabic ? 'إضافة مهمة عناية' : 'Add Care Task';
+  String get taskTitle => isArabic ? 'عنوان المهمة' : 'Task Title';
+  String get taskType => isArabic ? 'نوع المهمة' : 'Task Type';
+  String get dueDate => isArabic ? 'تاريخ الاستحقاق' : 'Due Date';
+  String get repeatEveryDays => isArabic ? 'التكرار كل (أيام)' : 'Repeat every (days)';
+  String get markAsCompleted => isArabic ? 'تسجيل الإنجاز' : 'Mark Completed';
+  String get taskCompletedSuccess => isArabic ? 'تم تسجيل إنجاز المهمة بنجاح.' : 'Task completed successfully.';
+  String get initRecommendedSchedule => isArabic ? 'إنشاء جدول العناية الموصى به' : 'Generate Recommended Schedule';
+  String get noCareTasksYet => isArabic ? 'لا توجد مهام عناية مسجلة لهذه النبتة.' : 'No care tasks recorded for this plant yet.';
+
+  String get notificationsTitle => isArabic ? 'التنبيهات والإشعارات' : 'Alerts & Notifications';
+  String get markAllRead => isArabic ? 'تحديد الكل كمقروء' : 'Mark all as read';
+  String get noNotifications => isArabic ? 'لا توجد تنبيهات حالياً.' : 'No notifications currently.';
+  String get careRemindersPref => isArabic ? 'تذكيرات مواعيد العناية' : 'Care Task Reminders';
+  String get diagnosisAlertsPref => isArabic ? 'تنبيهات فحص الذكاء الاصطناعي' : 'AI Health Alerts';
+  String get notificationPreferences => isArabic ? 'إعدادات التنبيهات' : 'Notification Preferences';
+
+  String get encyclopediaTitle => isArabic ? 'موسوعة النباتات الزراعية' : 'Plant Encyclopedia';
+  String get searchEncyclopedia => isArabic ? 'ابحث في موسوعة النباتات...' : 'Search plant encyclopedia...';
+  String get idealConditions => isArabic ? 'الظروف المثالية للنمو' : 'Ideal Growth Conditions';
+  String get temperatureRange => isArabic ? 'الحرارة' : 'Temperature';
+  String get humidityRange => isArabic ? 'الرطوبة' : 'Humidity';
+  String get careGuidelines => isArabic ? 'إرشادات العناية' : 'Care Guidelines';
+  String get publishedStatus => isArabic ? 'منشور في الموسوعة' : 'Published';
+  String get draftStatus => isArabic ? 'مسودة خاصة' : 'Draft / Private';
+  String get publishToEncyclopedia => isArabic ? 'نشر في الموسوعة' : 'Publish to Encyclopedia';
+  String get unpublishFromEncyclopedia => isArabic ? 'إلغاء النشر' : 'Unpublish';
+  String get manageEncyclopediaTitle => isArabic ? 'إدارة محتوى الموسوعة' : 'Manage Encyclopedia Content';
+
+  // ===========================================================================
+  // M6 — Analytics & Export
+  // ===========================================================================
+  String get analyticsTitle => isArabic ? 'التحليلات ومؤشرات النمو' : 'Analytics & Growth Indicators';
+  String get plantAge => isArabic ? 'عمر النبات' : 'Plant Age';
+  String get days => isArabic ? 'يوم' : 'days';
+  String get inspectionsCount => isArabic ? 'عدد الفحوصات' : 'Inspections Count';
+  String get healthRatio => isArabic ? 'معدل الحالة الصحية' : 'Health Distribution';
+  String get careCompletionRate => isArabic ? 'نسبة إنجاز العناية' : 'Care Completion Rate';
+  String get filterByPlant => isArabic ? 'فلترة حسب النبات' : 'Filter by Plant';
+  String get filterByDate => isArabic ? 'الفترة الزمنية' : 'Time Period';
+  String get compareTrends => isArabic ? 'مقارنة اتجاهات نباتين' : 'Compare Two Plants';
+  String get selectPlantA => isArabic ? 'النبتة الأولى' : 'First Plant';
+  String get selectPlantB => isArabic ? 'النبتة الثانية' : 'Second Plant';
+  String get exportPdf => isArabic ? 'تصدير تقرير PDF' : 'Export PDF Report';
+  String get exportCsv => isArabic ? 'تصدير بيانات CSV' : 'Export CSV';
+  String get exportSuccess => isArabic ? 'تم تجهيز ملف التصدير بنجاح.' : 'Export file prepared successfully.';
 }
 
 class _AppLocalizationsDelegate

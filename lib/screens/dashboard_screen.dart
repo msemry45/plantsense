@@ -105,9 +105,21 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
+                        onPressed: () => context.push('/encyclopedia'),
+                        icon: const Icon(Icons.menu_book_rounded, size: 20),
+                        label: Text(l10n.encyclopediaTitle),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
                         onPressed: () => context.go('/login'),
                         icon: const Icon(Icons.lock_open_rounded, size: 18),
                         label: Text(l10n.login),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                        ),
                       ),
                     ],
                   ),
@@ -127,6 +139,11 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.dashboard),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: l10n.notificationsTitle,
+            onPressed: () => context.push('/notifications'),
+          ),
           const LanguageToggleButton(),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
@@ -208,6 +225,24 @@ class DashboardScreen extends StatelessWidget {
                           minimumSize: const Size.fromHeight(48),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/encyclopedia'),
+                        icon: const Icon(Icons.menu_book_rounded, size: 20),
+                        label: Text(l10n.encyclopediaTitle),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/analytics'),
+                        icon: const Icon(Icons.analytics_outlined, size: 20),
+                        label: Text(l10n.analyticsTitle),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -226,6 +261,11 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.roleAdmin),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: l10n.notificationsTitle,
+            onPressed: () => context.push('/notifications'),
+          ),
           const LanguageToggleButton(),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
@@ -294,6 +334,35 @@ class DashboardScreen extends StatelessWidget {
                         onPressed: () => context.push('/admin/users'),
                         icon: const Icon(Icons.people_alt_outlined, size: 18),
                         label: Text(l10n.adminUsersAction),
+                        style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/admin/species'),
+                        icon: const Icon(Icons.edit_note_rounded, size: 20),
+                        label: Text(l10n.manageEncyclopediaTitle),
+                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/encyclopedia'),
+                        icon: const Icon(Icons.menu_book_rounded, size: 20),
+                        label: Text(l10n.encyclopediaTitle),
+                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/plants'),
+                        icon: const Icon(Icons.yard_outlined, size: 20),
+                        label: Text(l10n.isArabic ? 'استعراض كافة النباتات' : 'Browse All Plants'),
+                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/analytics'),
+                        icon: const Icon(Icons.analytics_outlined, size: 20),
+                        label: Text(l10n.analyticsTitle),
+                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                       ),
                     ],
                   ),
@@ -313,6 +382,11 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.roleViewer),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: l10n.notificationsTitle,
+            onPressed: () => context.push('/notifications'),
+          ),
           const LanguageToggleButton(),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
@@ -385,6 +459,24 @@ class DashboardScreen extends StatelessWidget {
                           minimumSize: const Size.fromHeight(48),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/encyclopedia'),
+                        icon: const Icon(Icons.menu_book_rounded, size: 20),
+                        label: Text(l10n.encyclopediaTitle),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/analytics'),
+                        icon: const Icon(Icons.analytics_outlined, size: 20),
+                        label: Text(l10n.analyticsTitle),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -403,6 +495,11 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.dashboard),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: l10n.notificationsTitle,
+            onPressed: () => context.push('/notifications'),
+          ),
           const LanguageToggleButton(),
           IconButton(
             icon: const Icon(Icons.logout_rounded),

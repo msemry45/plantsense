@@ -8,6 +8,11 @@ import 'screens/suspended_screen.dart';
 import 'screens/admin_users_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/forgot_password_screen.dart';
+import 'screens/reset_password_screen.dart';
+import 'screens/encyclopedia/encyclopedia_screen.dart';
+import 'screens/admin/admin_species_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
+import 'screens/analytics/analytics_screen.dart';
 import 'screens/plants/plants_list_screen.dart';
 import 'screens/plants/plant_form_screen.dart';
 import 'screens/plants/plant_details_screen.dart';
@@ -31,12 +36,21 @@ GoRouter createRouter(AuthService authService) {
 
       final bool isAuthRoute = path == '/login' ||
           path == '/register' ||
-          path == '/forgot-password';
-      final bool isGuestRoute = path == '/guest';
+          path == '/forgot-password' ||
+          path == '/reset-password';
+      final bool isGuestRoute = path == '/guest' || path == '/encyclopedia';
+
+      if (authService.isPasswordRecovery && path != '/reset-password') {
+        return '/reset-password';
+      }
 
       if (!loggedIn) {
         if (isAuthRoute || isGuestRoute) return null;
         return '/login';
+      }
+
+      if (path == '/reset-password') {
+        return null;
       }
 
       if (profile == null ||
@@ -79,6 +93,26 @@ GoRouter createRouter(AuthService authService) {
       GoRoute(
         path: '/admin/users',
         builder: (context, state) => const AdminUsersScreen(),
+      ),
+      GoRoute(
+        path: '/admin/species',
+        builder: (context, state) => const AdminSpeciesScreen(),
+      ),
+      GoRoute(
+        path: '/encyclopedia',
+        builder: (context, state) => EncyclopediaScreen(
+          isGuest: authService.user == null,
+        ),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/analytics',
+        builder: (context, state) => AnalyticsScreen(
+          isViewer: authService.profile?.role == 'viewer',
+        ),
       ),
       GoRoute(
         path: '/plants',
@@ -158,6 +192,11 @@ GoRouter createRouter(AuthService authService) {
         path: '/forgot-password',
         builder: (context, state) =>
             ForgotPasswordScreen(authService: authService),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) =>
+            ResetPasswordScreen(authService: authService),
       ),
     ],
   );

@@ -9,6 +9,7 @@ class AuthService extends ChangeNotifier {
   User? _user;
   UserProfile? _profile;
   bool _isLoading = true;
+  bool _isPasswordRecovery = false;
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
 
@@ -16,6 +17,7 @@ class AuthService extends ChangeNotifier {
   UserProfile? get profile => _profile;
   UserProfile? get currentUserProfile => _profile;
   bool get isLoading => _isLoading;
+  bool get isPasswordRecovery => _isPasswordRecovery;
 
   AuthService({SupabaseClient? client})
       : _supabase = client ?? Supabase.instance.client {
@@ -37,6 +39,9 @@ class AuthService extends ChangeNotifier {
 
       final previousUserId = _user?.id;
       _user = session?.user;
+      if (event == AuthChangeEvent.passwordRecovery) {
+        _isPasswordRecovery = true;
+      }
       if (_user == null) {
         _profileSubscription?.cancel();
         _profileSubscription = null;
@@ -145,5 +150,13 @@ class AuthService extends ChangeNotifier {
 
   Future<void> resetPassword(String email) async {
     await _supabase.auth.resetPasswordForEmail(email);
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    await _supabase.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+    _isPasswordRecovery = false;
+    notifyListeners();
   }
 }

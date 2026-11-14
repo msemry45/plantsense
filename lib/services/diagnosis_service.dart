@@ -1,14 +1,15 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/diagnosis.dart';
 
 class DiagnosisService {
-  final SupabaseClient _client;
+  final SupabaseClient? _clientInstance;
 
-  DiagnosisService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  DiagnosisService({SupabaseClient? client}) : _clientInstance = client;
+
+  SupabaseClient get _client => _clientInstance ?? Supabase.instance.client;
 
   /// Invoke the Edge Function to analyze a plant image using Gemini Multimodal AI
+  /// The Gemini API Key is stored securely exclusively in Supabase Secrets.
   Future<Diagnosis> analyzePlantImage({
     required String plantId,
     required String imageId,
@@ -16,7 +17,6 @@ class DiagnosisService {
     String? speciesScientific,
     String language = 'ar',
   }) async {
-    final effectiveKey = (dotenv.isInitialized ? dotenv.env['GEMINI_API_KEY'] : null);
     final response = await _client.functions.invoke(
       'analyze-plant-image',
       body: {
@@ -25,8 +25,6 @@ class DiagnosisService {
         'species_common': speciesCommon,
         'species_scientific': speciesScientific,
         'language': language,
-        if (effectiveKey != null && effectiveKey.isNotEmpty)
-          'gemini_api_key': effectiveKey,
       },
     );
 
@@ -89,5 +87,22 @@ class DiagnosisService {
     return rows
         .map((r) => Diagnosis.fromJson(r))
         .toList();
+  }
+
+  /// Get signed URL for the image analyzed in a diagnosis
+  Future<String?> getImageUrlForDiagnosis(String imageId) async {
+    try {
+      final img = await _client
+          .from('plant_images')
+          .select('storage_path')
+          .eq('id', imageId)
+          .maybeSingle();
+      if (img != null && img['storage_path'] != null) {
+        return await _client.storage
+            .from('plant-images')
+            .createSignedUrl(img['storage_path'] as String, 3600);
+      }
+    } catch (_) {}
+    return null;
   }
 }
