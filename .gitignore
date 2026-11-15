@@ -56,6 +56,9 @@ app.*.map.json
 .env.test
 .env*
 !.env.example
+client_secret*.json
+*.keystore
+*.jks
 
 # Build Releases & Temp Files
 release/

@@ -5,7 +5,7 @@ class NotificationItem {
   final String? plantId;
   final String? diagnosisId;
   final String? careTaskId;
-  final String type; // diagnosis_alert, care_due, general
+  final String type; // diagnosis, care, general
   final String title;
   final String body;
   final bool isRead;
@@ -24,8 +24,8 @@ class NotificationItem {
     required this.createdAt,
   });
 
-  bool get isDiagnosisAlert => type == 'diagnosis_alert';
-  bool get isCareDueAlert => type == 'care_due';
+  bool get isDiagnosisAlert => type == 'diagnosis';
+  bool get isCareDueAlert => type == 'care';
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(

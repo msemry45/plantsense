@@ -62,6 +62,7 @@ class AppLocalizations {
   String get logoutConfirmTitle => isArabic ? 'تأكيد تسجيل الخروج' : 'Confirm Logout';
   String get logoutConfirmContent => isArabic ? 'هل تريد تسجيل الخروج من حسابك؟' : 'Are you sure you want to log out?';
   String get continueAsGuest => isArabic ? 'المتابعة كزائر' : 'Continue as Guest';
+  String get continueWithGoogle => isArabic ? 'المتابعة باستخدام Google' : 'Continue with Google';
   String get welcomeBack => isArabic ? 'أهلاً بك مجدداً في SVPG' : 'Welcome back to SVPG';
   String get createNewAccountHeader => isArabic ? 'انضم إلى نظام المراقبة الزراعية الذكي' : 'Join the Smart Plant Monitoring System';
   String get resetPasswordInstruction => isArabic

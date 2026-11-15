@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/species.dart';
 import '../../services/plant_service.dart';
 import '../../services/species_service.dart';
+import '../../services/care_task_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/language_toggle_button.dart';
 
@@ -11,12 +12,14 @@ class PlantFormScreen extends StatefulWidget {
   final String? plantId;
   final PlantService? plantService;
   final SpeciesService? speciesService;
+  final CareTaskService? careTaskService;
 
   const PlantFormScreen({
     super.key,
     this.plantId,
     this.plantService,
     this.speciesService,
+    this.careTaskService,
   });
 
   @override
@@ -28,6 +31,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
 
   late final PlantService _plantService;
   late final SpeciesService _speciesService;
+  late final CareTaskService _careTaskService;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
@@ -49,6 +53,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
     super.initState();
     _plantService = widget.plantService ?? PlantService();
     _speciesService = widget.speciesService ?? SpeciesService();
+    _careTaskService = widget.careTaskService ?? CareTaskService();
     _selectedPlantedDate = DateTime.now();
     _loadInitialData();
   }
@@ -68,7 +73,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
     });
 
     try {
-      final species = await _speciesService.getPublishedSpecies();
+      final species = await _speciesService.getAvailableSpeciesForPlant();
       _speciesList = species;
 
       if (isEdit) {
@@ -275,13 +280,27 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
           status: _status,
         );
       } else {
-        await _plantService.createPlant(
+        final newPlant = await _plantService.createPlant(
           name: _nameController.text.trim(),
           speciesId: _selectedSpeciesId,
           location: _locationController.text.trim(),
           plantedOn: _selectedPlantedDate,
           notes: _notesController.text.trim(),
         );
+
+        try {
+          final selectedSpecies = _speciesList
+              .where((s) => s.id == _selectedSpeciesId)
+              .firstOrNull;
+          await _careTaskService.initializeScheduleFromSpecies(
+            plantId: newPlant.id,
+            speciesName: selectedSpecies?.commonName,
+            careInstructions: selectedSpecies?.careInstructions,
+            isArabic: l10n.isArabic,
+          );
+        } catch (_) {
+          // Graceful fallback for offline or mocking environments
+        }
       }
 
       if (mounted) {

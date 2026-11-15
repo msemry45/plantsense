@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/language_toggle_button.dart';
+import '../widgets/google_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   final AuthService authService;
@@ -57,6 +58,31 @@ class _LoginScreenState extends State<LoginScreen> {
         email: email,
         password: password,
       );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.error,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('${l10n.error}: ${e.toString()}')),
+              ],
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    final l10n = context.l10n;
+    setState(() => _isLoading = true);
+    try {
+      await widget.authService.signInWithGoogle();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -217,6 +243,33 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _isLoading ? null : _handleGoogleSignIn,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: AppColors.dark.withOpacity(0.2)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const GoogleLogo(size: 20),
+                        const SizedBox(width: 12),
+                        Text(
+                          l10n.continueWithGoogle,
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontFamily,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: AppColors.dark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   OutlinedButton.icon(
                     onPressed: () => context.go('/guest'),
                     icon: const Icon(Icons.explore_outlined, size: 20),

@@ -44,6 +44,8 @@ dependencies:
   intl: ^0.18.1
   shared_preferences: ^2.2.3
   pdf: ^3.11.3
+  path_provider: ^2.1.4
+  share_plus: ^7.2.2
 
 dev_dependencies:
   flutter_test:
@@ -71,7 +73,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - .env
     - assets/branding/
     - assets/branding/SVPG/
 

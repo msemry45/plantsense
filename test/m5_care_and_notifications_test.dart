@@ -48,7 +48,7 @@ void main() {
         plantId: 'plant-1',
         createdBy: 'user-1',
         title: 'فحص الحشرات',
-        taskType: 'pest_control',
+        taskType: 'inspection',
         dueAt: pastDate,
         status: 'pending',
         createdAt: pastDate,
@@ -56,8 +56,8 @@ void main() {
       );
 
       expect(task.isOverdue, isTrue);
-      expect(task.localizedTaskType(true), 'مكافحة الآفات');
-      expect(task.localizedTaskType(false), 'Pest Control');
+      expect(task.localizedTaskType(true), 'مراقبة وفحص');
+      expect(task.localizedTaskType(false), 'Inspection');
     });
 
     test('CareTask identifies completed status and copyWith', () {
@@ -95,7 +95,7 @@ void main() {
         'plant_id': 'plant-456',
         'diagnosis_id': 'diag-789',
         'care_task_id': null,
-        'type': 'diagnosis_alert',
+        'type': 'diagnosis',
         'title': 'تنبيه صحة النبات',
         'body': 'أظهر فحص الأوراق اصفراراً بحاجة لاهتمام',
         'is_read': false,

@@ -29,6 +29,11 @@ class CareTaskService {
     int? repeatEveryDays,
   }) async {
     final user = _client.auth.currentUser;
+    final normalizedType = ['watering', 'fertilizing', 'pruning', 'inspection', 'other']
+            .contains(taskType)
+        ? taskType
+        : 'other';
+
     final row = await _client
         .from('care_tasks')
         .insert({
@@ -36,7 +41,7 @@ class CareTaskService {
           'created_by': user?.id,
           'title': title,
           'description': description,
-          'task_type': taskType,
+          'task_type': normalizedType,
           'due_at': (dueAt ?? DateTime.now()).toIso8601String(),
           'repeat_every_days': repeatEveryDays,
           'status': 'pending',
@@ -67,12 +72,17 @@ class CareTaskService {
     // If recurring, schedule next occurrence
     if (task.repeatEveryDays != null && task.repeatEveryDays! > 0) {
       final nextDue = now.add(Duration(days: task.repeatEveryDays!));
+      final normalizedType = ['watering', 'fertilizing', 'pruning', 'inspection', 'other']
+              .contains(task.taskType)
+          ? task.taskType
+          : 'other';
+
       await _client.from('care_tasks').insert({
         'plant_id': task.plantId,
         'created_by': user?.id,
         'title': task.title,
         'description': task.description,
-        'task_type': task.taskType,
+        'task_type': normalizedType,
         'due_at': nextDue.toIso8601String(),
         'repeat_every_days': task.repeatEveryDays,
         'status': 'pending',
@@ -91,19 +101,35 @@ class CareTaskService {
   Future<List<CareTask>> initializeDefaultSchedule({
     required String plantId,
     String? speciesName,
+    String? careInstructions,
+    bool isArabic = true,
+  }) async {
+    return initializeScheduleFromSpecies(
+      plantId: plantId,
+      speciesName: speciesName,
+      careInstructions: careInstructions,
+      isArabic: isArabic,
+    );
+  }
+
+  /// Initialize recommended care schedule for a plant from species template
+  Future<List<CareTask>> initializeScheduleFromSpecies({
+    required String plantId,
+    String? speciesName,
+    String? careInstructions,
     bool isArabic = true,
   }) async {
     final user = _client.auth.currentUser;
     final now = DateTime.now();
 
-    final defaultTasks = [
+    final tasks = [
       {
         'plant_id': plantId,
         'created_by': user?.id,
-        'title': isArabic ? 'ري النبتة المنتظم' : 'Regular Plant Watering',
-        'description': isArabic
-            ? 'ري خفيف ومناسب لرطوبة التربة'
-            : 'Moderate watering suitable for soil moisture',
+        'title': isArabic ? 'ري النبتة الدوري' : 'Periodic Plant Watering',
+        'description': careInstructions != null && careInstructions.isNotEmpty
+            ? careInstructions
+            : (isArabic ? 'ري خفيف ومناسب لرطوبة التربة' : 'Moderate watering suitable for soil moisture'),
         'task_type': 'watering',
         'due_at': now.add(const Duration(days: 2)).toIso8601String(),
         'repeat_every_days': 3,
@@ -112,11 +138,11 @@ class CareTaskService {
       {
         'plant_id': plantId,
         'created_by': user?.id,
-        'title': isArabic ? 'مراقبة وفحص الأوراق' : 'Foliage Inspection',
+        'title': isArabic ? 'فحص الأوراق ومراقبة النمو' : 'Foliage & Growth Inspection',
         'description': isArabic
             ? 'التقاط صورة وفحص علامات الإجهاد والنمو'
             : 'Capture leaf photo and inspect growth signs',
-        'task_type': 'monitoring',
+        'task_type': 'inspection',
         'due_at': now.add(const Duration(days: 5)).toIso8601String(),
         'repeat_every_days': 7,
         'status': 'pending',
@@ -133,11 +159,23 @@ class CareTaskService {
         'repeat_every_days': 14,
         'status': 'pending',
       },
+      {
+        'plant_id': plantId,
+        'created_by': user?.id,
+        'title': isArabic ? 'تقليم وتشذيب الأوراق' : 'Pruning & Maintenance',
+        'description': isArabic
+            ? 'إزالة الأوراق القديمة أو الجافة لتشجيع النمو'
+            : 'Remove old or dry leaves to promote growth',
+        'task_type': 'pruning',
+        'due_at': now.add(const Duration(days: 30)).toIso8601String(),
+        'repeat_every_days': 30,
+        'status': 'pending',
+      },
     ];
 
     final inserted = await _client
         .from('care_tasks')
-        .insert(defaultTasks)
+        .insert(tasks)
         .select();
 
     return inserted.map((r) => CareTask.fromJson(r)).toList();

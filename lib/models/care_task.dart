@@ -5,10 +5,10 @@ class CareTask {
   final String createdBy;
   final String title;
   final String? description;
-  final String taskType; // watering, fertilizing, pruning, pest_control, monitoring, other
+  final String taskType; // watering, fertilizing, pruning, inspection, other
   final DateTime? dueAt;
   final int? repeatEveryDays;
-  final String status; // pending, completed, overdue, cancelled
+  final String status; // pending, completed, cancelled
   final DateTime? completedAt;
   final String? completedBy;
   final DateTime createdAt;
@@ -45,10 +45,9 @@ class CareTask {
         return isArabic ? 'تسميد' : 'Fertilizing';
       case 'pruning':
         return isArabic ? 'تقليم' : 'Pruning';
-      case 'pest_control':
-        return isArabic ? 'مكافحة الآفات' : 'Pest Control';
-      case 'monitoring':
-        return isArabic ? 'مراقبة وفحص' : 'Monitoring';
+      case 'inspection':
+        return isArabic ? 'مراقبة وفحص' : 'Inspection';
+      case 'other':
       default:
         return isArabic ? 'عناية عامة' : 'General Care';
     }

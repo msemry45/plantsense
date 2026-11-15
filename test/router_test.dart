@@ -110,6 +110,12 @@ void main() {
       expected: '/login',
     ),
     (
+      name: 'password recovery redirects to reset password screen',
+      auth: _AuthState(isPasswordRecovery: true),
+      path: '/login',
+      expected: '/reset-password',
+    ),
+    (
       name: 'a guest can use the public guest route',
       auth: _AuthState(),
       path: '/guest',

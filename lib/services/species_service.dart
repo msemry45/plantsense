@@ -8,6 +8,7 @@ class SpeciesService {
 
   SupabaseClient get _client => _clientInstance ?? Supabase.instance.client;
 
+  /// Get published species for the public Encyclopedia (Guests and Farmers)
   Future<List<Species>> getPublishedSpecies({String? search}) async {
     var query = _client
         .from('species')
@@ -22,6 +23,25 @@ class SpeciesService {
     return response
         .map((row) => Species.fromJson(row))
         .toList();
+  }
+
+  /// Get species available for plant creation (published species + farmer's own custom species)
+  Future<List<Species>> getAvailableSpeciesForPlant({String? search}) async {
+    final user = _client.auth.currentUser;
+    var query = _client.from('species').select();
+
+    if (user != null) {
+      query = query.or('is_published.eq.true,created_by.eq.${user.id}');
+    } else {
+      query = query.eq('is_published', true);
+    }
+
+    if (search != null && search.trim().isNotEmpty) {
+      query = query.ilike('common_name', '%${search.trim()}%');
+    }
+
+    final response = await query.order('common_name', ascending: true);
+    return response.map((row) => Species.fromJson(row)).toList();
   }
 
   Future<Species?> getSpeciesById(String id) async {
@@ -77,7 +97,8 @@ class SpeciesService {
           'scientific_name': (scientificName != null && scientificName.trim().isNotEmpty)
               ? scientificName.trim()
               : null,
-          'is_published': true,
+          'is_published': false,
+          'created_by': _client.auth.currentUser?.id,
         })
         .select()
         .single();

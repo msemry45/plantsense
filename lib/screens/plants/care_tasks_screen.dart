@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/care_task.dart';
 import '../../models/plant.dart';
 import '../../services/care_task_service.dart';
+import '../../services/notification_service.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/language_toggle_button.dart';
@@ -9,12 +10,14 @@ import '../../widgets/language_toggle_button.dart';
 class CareTasksScreen extends StatefulWidget {
   final Plant plant;
   final CareTaskService? careTaskService;
+  final NotificationService? notificationService;
   final bool isViewer;
 
   const CareTasksScreen({
     super.key,
     required this.plant,
     this.careTaskService,
+    this.notificationService,
     this.isViewer = false,
   });
 
@@ -25,6 +28,7 @@ class CareTasksScreen extends StatefulWidget {
 class _CareTasksScreenState extends State<CareTasksScreen>
     with SingleTickerProviderStateMixin {
   late final CareTaskService _service;
+  late final NotificationService _notificationService;
   late final TabController _tabController;
 
   List<CareTask> _tasks = [];
@@ -35,6 +39,7 @@ class _CareTasksScreenState extends State<CareTasksScreen>
   void initState() {
     super.initState();
     _service = widget.careTaskService ?? CareTaskService();
+    _notificationService = widget.notificationService ?? NotificationService();
     _tabController = TabController(length: 2, vsync: this);
     _loadTasks();
   }
@@ -58,6 +63,20 @@ class _CareTasksScreenState extends State<CareTasksScreen>
           _tasks = list;
           _isLoading = false;
         });
+      }
+
+      // Automatically generate care alerts for overdue tasks if device reminders enabled
+      for (final t in list.where((t) => t.isOverdue)) {
+        try {
+          await _notificationService.createCareTaskAlert(
+            plantId: widget.plant.id,
+            plantName: widget.plant.name,
+            careTaskId: t.id,
+            taskTitle: t.title,
+            isOverdue: true,
+            isArabic: mounted ? context.l10n.isArabic : true,
+          );
+        } catch (_) {}
       }
     } catch (e) {
       if (mounted) {
@@ -162,8 +181,7 @@ class _CareTasksScreenState extends State<CareTasksScreen>
                     DropdownMenuItem(value: 'watering', child: Text(isArabic ? 'ري' : 'Watering')),
                     DropdownMenuItem(value: 'fertilizing', child: Text(isArabic ? 'تسميد' : 'Fertilizing')),
                     DropdownMenuItem(value: 'pruning', child: Text(isArabic ? 'تقليم' : 'Pruning')),
-                    DropdownMenuItem(value: 'pest_control', child: Text(isArabic ? 'مكافحة الآفات' : 'Pest Control')),
-                    DropdownMenuItem(value: 'monitoring', child: Text(isArabic ? 'مراقبة وفحص' : 'Monitoring')),
+                    DropdownMenuItem(value: 'inspection', child: Text(isArabic ? 'مراقبة وفحص' : 'Inspection')),
                     DropdownMenuItem(value: 'other', child: Text(isArabic ? 'أخرى' : 'Other')),
                   ],
                   onChanged: (val) {
@@ -559,10 +577,9 @@ class _CareTasksScreenState extends State<CareTasksScreen>
         return Icons.grain_rounded;
       case 'pruning':
         return Icons.content_cut_rounded;
-      case 'pest_control':
-        return Icons.bug_report_rounded;
-      case 'monitoring':
+      case 'inspection':
         return Icons.visibility_rounded;
+      case 'other':
       default:
         return Icons.task_alt_rounded;
     }

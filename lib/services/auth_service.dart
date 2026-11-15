@@ -105,6 +105,14 @@ class AuthService extends ChangeNotifier {
     await _supabase.auth.signInWithPassword(email: email, password: password);
   }
 
+  Future<void> signInWithGoogle() async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: kIsWeb ? null : 'plantsense://login-callback',
+      authScreenLaunchMode: LaunchMode.externalApplication,
+    );
+  }
+
   Future<void> signUp(
       {required String email,
       required String password,

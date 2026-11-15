@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../models/plant.dart';
 import '../../services/analytics_service.dart';
 import '../../services/plant_service.dart';
@@ -85,9 +89,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
   }
 
-  void _exportCsv() {
+  Future<void> _exportCsv() async {
     final l10n = context.l10n;
     final csv = _analyticsService.exportToCsv(_summaries, isArabic: l10n.isArabic);
+
+    File? exportedFile;
+    try {
+      final dir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final file = File('${dir.path}/svpg_analytics_$timestamp.csv');
+      await file.writeAsString(csv, encoding: utf8);
+      exportedFile = file;
+    } catch (_) {}
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -101,11 +116,33 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
         content: SizedBox(
           width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: SelectableText(
-              csv,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.isArabic
+                    ? 'تم تجهيز ملف البيانات بصيغة CSV متوافقة مع Excel (UTF-8 BOM).'
+                    : 'CSV dataset prepared with UTF-8 BOM compatibility.',
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 180),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    csv,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 10),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -113,19 +150,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(l10n.close),
           ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: AppColors.primary,
-                  content: Text(l10n.exportSuccess),
-                ),
-              );
-            },
-            icon: const Icon(Icons.check, size: 16),
-            label: Text(l10n.done),
-          ),
+          if (exportedFile != null)
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                await Share.shareXFiles(
+                  [XFile(exportedFile!.path)],
+                  text: l10n.isArabic
+                      ? 'تقرير بيانات SVPG (CSV)'
+                      : 'SVPG Analytics Data (CSV)',
+                );
+              },
+              icon: const Icon(Icons.share_rounded, size: 16),
+              label: Text(l10n.isArabic ? 'مشاركة / حفظ الملف' : 'Share / Save File'),
+            ),
         ],
       ),
     );
@@ -143,6 +181,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         filterTitle: filterText,
         isArabic: l10n.isArabic,
       );
+
+      File? exportedFile;
+      try {
+        final dir = await getTemporaryDirectory();
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final file = File('${dir.path}/svpg_growth_report_$timestamp.pdf');
+        await file.writeAsBytes(pdfBytes);
+        exportedFile = file;
+      } catch (_) {}
 
       if (mounted) {
         showDialog(
@@ -178,10 +225,24 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ],
             ),
             actions: [
-              ElevatedButton(
+              TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(l10n.done),
+                child: Text(l10n.close),
               ),
+              if (exportedFile != null)
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    await Share.shareXFiles(
+                      [XFile(exportedFile!.path)],
+                      text: l10n.isArabic
+                          ? 'تقرير أداء ونمو النباتات SVPG (PDF)'
+                          : 'SVPG Plant Growth Report (PDF)',
+                    );
+                  },
+                  icon: const Icon(Icons.share_rounded, size: 16),
+                  label: Text(l10n.isArabic ? 'مشاركة / حفظ التقرير' : 'Share / Save Report'),
+                ),
             ],
           ),
         );

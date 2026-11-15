@@ -159,7 +159,7 @@ Deno.serve(async (req: Request) => {
     // -----------------------------------------------------------
     // ACTION: Custom Species Creation (Bypasses admin-only species RLS)
     // -----------------------------------------------------------
-    if (body.action === "create_species") {
+    if (body.action === "create_species" || body.action === "create_custom_species") {
       const commonName = (body.common_name || "").toString().trim();
       const scientificName = (body.scientific_name || "").toString().trim();
       if (!commonName) {
@@ -188,7 +188,7 @@ Deno.serve(async (req: Request) => {
         .insert({
           common_name: commonName,
           scientific_name: scientificName || null,
-          is_published: true,
+          is_published: false,
           created_by: user.id,
         })
         .select()
@@ -288,6 +288,48 @@ Deno.serve(async (req: Request) => {
         }),
         { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
       );
+    }
+
+    // Concurrent request handling: If another analysis is already processing for this image, wait for it!
+    const { data: pendingReq } = await adminClient
+      .from("analysis_requests")
+      .select("id, status")
+      .eq("image_id", image_id)
+      .eq("status", "processing")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (pendingReq) {
+      for (let i = 0; i < 15; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        const { data: pollDiag } = await adminClient
+          .from("diagnoses")
+          .select("*")
+          .eq("image_id", image_id)
+          .maybeSingle();
+
+        if (pollDiag) {
+          const raw = pollDiag.raw_response || {};
+          return new Response(
+            JSON.stringify({
+              diagnosis_id: pollDiag.id,
+              analysis_request_id: pollDiag.analysis_request_id,
+              plant_id: pollDiag.plant_id,
+              image_id: pollDiag.image_id,
+              health_status: raw.health_status || pollDiag.label,
+              visible_signs: raw.visible_signs || [],
+              severity: raw.severity || (pollDiag.severity === "healthy" ? "None" : "Low"),
+              confidence_note: raw.confidence_note || pollDiag.summary,
+              recommendations: raw.recommendations || pollDiag.recommendations || [],
+              disclaimer: raw.disclaimer || (language === "ar" ? "إرشادات بصرية بمساعدة الذكاء الاصطناعي، وليست تشخيصاً مؤكداً." : "AI-assisted visual guidance; not a confirmed diagnosis."),
+              created_at: pollDiag.created_at,
+              cached: true,
+            }),
+            { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+          );
+        }
+      }
     }
 
     // Download physical image bytes from private storage

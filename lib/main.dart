@@ -10,11 +10,32 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (_) {
+    // .env is intentionally not bundled in release assets to prevent secret leakage.
+  }
+
+  const defaultUrl = 'https://tpsguqbyqlvsxrshwcks.supabase.co';
+  const defaultAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwc2d1cWJ5cWx2c3hyc2h3Y2tzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NjkzMjYsImV4cCI6MjEwNjA0NTMyNn0.o3OZuatIiUlcdbdxCC7KUVwOvpOeNEH3geKU4LFKl-4';
+
+  final supabaseUrl = const String.fromEnvironment('SUPABASE_URL', defaultValue: '')
+      .isNotEmpty
+      ? const String.fromEnvironment('SUPABASE_URL')
+      : ((dotenv.isInitialized ? dotenv.env['SUPABASE_URL'] : null) ?? defaultUrl);
+
+  final supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '')
+      .isNotEmpty
+      ? const String.fromEnvironment('SUPABASE_ANON_KEY')
+      : ((dotenv.isInitialized ? dotenv.env['SUPABASE_ANON_KEY'] : null) ?? defaultAnonKey);
 
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+    ),
   );
 
   await LocaleService.init();
