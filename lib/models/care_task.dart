@@ -53,6 +53,29 @@ class CareTask {
     }
   }
 
+  /// Extracts custom task type name if stored in description as `[نوع: الاسم]` or `[type: Name]`
+  String? get customTaskTypeName {
+    if (taskType != 'other' || description == null) return null;
+    final match = RegExp(r'^\[(?:نوع|type):\s*([^\]]+)\]\s*').firstMatch(description!);
+    return match?.group(1)?.trim();
+  }
+
+  /// Returns user notes without the leading `[نوع: ...]` tag
+  String get cleanDescription {
+    if (description == null) return '';
+    return description!.replaceFirst(RegExp(r'^\[(?:نوع|type):\s*[^\]]+\]\s*'), '').trim();
+  }
+
+  /// Display string for task type, respecting custom type name if specified
+  String displayTaskType(bool isArabic) {
+    if (taskType == 'other') {
+      final custom = customTaskTypeName;
+      if (custom != null && custom.isNotEmpty) return custom;
+      return isArabic ? 'أخرى' : 'Other';
+    }
+    return localizedTaskType(isArabic);
+  }
+
   factory CareTask.fromJson(Map<String, dynamic> json) {
     return CareTask(
       id: json['id'] as String,

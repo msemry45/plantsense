@@ -1,4 +1,5 @@
-import 'dart:typed_data';
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -178,85 +179,176 @@ class AnalyticsService {
     return buffer.toString();
   }
 
-  /// Generate structured PDF document bytes
+  /// Generate structured PDF document bytes with embedded Arabic/English typography
   Future<Uint8List> exportToPdf(
     List<PlantAnalyticsSummary> items, {
     required String filterTitle,
     bool isArabic = true,
+    ByteData? regularFontData,
+    ByteData? boldFontData,
   }) async {
-    final pdf = pw.Document();
+    // 1. Attempt loading bundled Arabic font (Amiri)
+    if (regularFontData == null || boldFontData == null) {
+      try {
+        regularFontData ??= await rootBundle.load('assets/fonts/Amiri-Regular.ttf');
+        boldFontData ??= await rootBundle.load('assets/fonts/Amiri-Bold.ttf');
+      } catch (_) {
+        try {
+          final regFile = File('assets/fonts/Amiri-Regular.ttf');
+          final boldFile = File('assets/fonts/Amiri-Bold.ttf');
+          if (regFile.existsSync() && boldFile.existsSync()) {
+            regularFontData = regFile.readAsBytesSync().buffer.asByteData();
+            boldFontData = boldFile.readAsBytesSync().buffer.asByteData();
+          }
+        } catch (_) {}
+      }
+    }
+
+    final ttf = regularFontData != null ? pw.Font.ttf(regularFontData) : pw.Font.helvetica();
+    final ttfBold = boldFontData != null ? pw.Font.ttf(boldFontData) : pw.Font.helveticaBold();
+
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: ttf,
+        bold: ttfBold,
+      ),
+    );
+
+    final totalPlants = items.length;
+    final totalInspections = items.fold<int>(0, (sum, i) => sum + i.totalInspections);
+    final avgCare = items.isNotEmpty
+        ? items.fold<double>(0, (sum, i) => sum + i.careCompletionRate) / items.length
+        : 0.0;
+
+    String localizeStatus(String? status) {
+      if (status == null || status.isEmpty || status == '-') return '-';
+      if (!isArabic) return status;
+      switch (status) {
+        case 'Healthy':
+          return 'سليم';
+        case 'Attention Needed':
+          return 'بحاجة لاهتمام';
+        case 'Uncertain':
+          return 'غير مؤكد';
+        default:
+          return status;
+      }
+    }
+
+    final title = isArabic
+        ? 'SVPG — نظام مراقبة نمو النباتات الرأسية الذكي'
+        : 'SVPG — Smart Vertical Plant Growth Monitoring';
+    final subtitle = isArabic
+        ? 'تقرير تحليلات ومؤشرات أداء النمو'
+        : 'Growth Analytics & Performance Report';
+    final filterLabel = isArabic
+        ? 'فترة التقرير: $filterTitle'
+        : 'Filter Period: $filterTitle';
+
+    final headers = isArabic
+        ? [
+            'اسم النبات',
+            'النوع الزراعي',
+            'العمر (أيام)',
+            'الفحوصات',
+            'سليم',
+            'بحاجة لاهتمام',
+            'إنجاز العناية',
+            'آخر حالة'
+          ]
+        : [
+            'Plant',
+            'Species',
+            'Age (days)',
+            'Inspections',
+            'Healthy',
+            'Attention',
+            'Care %',
+            'Last Status'
+          ];
+
+    final now = DateTime.now();
+    final dateString = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
+        textDirection: isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
         build: (pw.Context context) {
-          final totalPlants = items.length;
-          final totalInspections = items.fold<int>(0, (sum, i) => sum + i.totalInspections);
-          final avgCare = items.isNotEmpty
-              ? items.fold<double>(0, (sum, i) => sum + i.careCompletionRate) / items.length
-              : 0.0;
-
           return [
             // Header
             pw.Header(
               level: 0,
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        isArabic ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'SVPG — Smart Vertical Plant Growth Monitoring',
+                        title,
                         style: pw.TextStyle(
-                          fontSize: 16,
+                          font: ttfBold,
+                          fontSize: 15,
                           fontWeight: pw.FontWeight.bold,
+                          color: const PdfColor.fromInt(0xFF1B4D3E),
                         ),
                       ),
+                      pw.SizedBox(height: 3),
                       pw.Text(
-                        'Growth Analytics & Performance Report',
-                        style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
+                        subtitle,
+                        style: pw.TextStyle(font: ttf, fontSize: 11, color: PdfColors.grey700),
                       ),
                     ],
                   ),
                   pw.Text(
-                    '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}',
-                    style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey600),
+                    dateString,
+                    style: pw.TextStyle(font: ttf, fontSize: 10, color: PdfColors.grey600),
                   ),
                 ],
               ),
             ),
 
-            pw.SizedBox(height: 12),
-            pw.Text('Filter Period: $filterTitle',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
-            pw.SizedBox(height: 16),
+            pw.SizedBox(height: 10),
+            pw.Text(
+              filterLabel,
+              style: pw.TextStyle(font: ttfBold, fontWeight: pw.FontWeight.bold, fontSize: 11),
+            ),
+            pw.SizedBox(height: 14),
 
             // Summary KPI Cards
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                _buildKpiCard('Total Plants', '$totalPlants'),
-                _buildKpiCard('Total Leaf Inspections', '$totalInspections'),
-                _buildKpiCard('Avg Care Completion', '${avgCare.toStringAsFixed(1)}%'),
+                _buildKpiCard(
+                  isArabic ? 'إجمالي النباتات' : 'Total Plants',
+                  '$totalPlants',
+                  ttf,
+                  ttfBold,
+                ),
+                _buildKpiCard(
+                  isArabic ? 'إجمالي فحوصات الأوراق' : 'Total Leaf Inspections',
+                  '$totalInspections',
+                  ttf,
+                  ttfBold,
+                ),
+                _buildKpiCard(
+                  isArabic ? 'متوسط إنجاز العناية' : 'Avg Care Completion',
+                  '${avgCare.toStringAsFixed(1)}%',
+                  ttf,
+                  ttfBold,
+                ),
               ],
             ),
 
             pw.SizedBox(height: 20),
 
-            // Table
+            // Main Data Table
             pw.TableHelper.fromTextArray(
-              headers: [
-                'Plant',
-                'Species',
-                'Age (days)',
-                'Inspections',
-                'Healthy',
-                'Attention',
-                'Care %',
-                'Last Status'
-              ],
+              headers: headers,
               data: items.map((i) {
                 return [
                   i.plantName,
@@ -266,26 +358,40 @@ class AnalyticsService {
                   '${i.healthyCount}',
                   '${i.attentionCount}',
                   '${i.careCompletionRate.toStringAsFixed(0)}%',
-                  i.lastStatus ?? '-',
+                  localizeStatus(i.lastStatus),
                 ];
               }).toList(),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(2.3),
+                1: const pw.FlexColumnWidth(1.9),
+                2: const pw.FlexColumnWidth(1.1),
+                3: const pw.FlexColumnWidth(1.4),
+                4: const pw.FlexColumnWidth(1.0),
+                5: const pw.FlexColumnWidth(1.3),
+                6: const pw.FlexColumnWidth(1.2),
+                7: const pw.FlexColumnWidth(1.3),
+              },
               border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
               headerStyle: pw.TextStyle(
+                font: ttfBold,
                 fontWeight: pw.FontWeight.bold,
-                fontSize: 10,
+                fontSize: 8.5,
                 color: PdfColors.white,
               ),
               headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF1B4D3E)),
-              cellStyle: const pw.TextStyle(fontSize: 9),
+              cellStyle: pw.TextStyle(font: ttf, fontSize: 8),
               cellAlignment: pw.Alignment.center,
-              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
             ),
 
             pw.SizedBox(height: 24),
             pw.Divider(color: PdfColors.grey400),
             pw.Text(
-              'SVPG Academic Monitoring System • Real Saved Historical Data • Ground Truth Measurements',
-              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              isArabic
+                  ? 'نظام SVPG الأكاديمي للمراقبة • بيانات تاريخية فعلية محفوظة • قياسات دقيقة وموثوقة'
+                  : 'SVPG Academic Monitoring System • Real Saved Historical Data • Ground Truth Measurements',
+              style: pw.TextStyle(font: ttf, fontSize: 8, color: PdfColors.grey600),
+              textAlign: isArabic ? pw.TextAlign.right : pw.TextAlign.left,
             ),
           ];
         },
@@ -295,18 +401,30 @@ class AnalyticsService {
     return pdf.save();
   }
 
-  pw.Widget _buildKpiCard(String label, String value) {
+  pw.Widget _buildKpiCard(String label, String value, pw.Font font, pw.Font boldFont) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(12),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: pw.BoxDecoration(
-        border: pw.TableBorder.all(color: PdfColors.grey300),
+        color: const PdfColor.fromInt(0xFFF4F7F5),
+        border: pw.Border.all(color: const PdfColor.fromInt(0xFFD0DCD5), width: 0.8),
         borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
       ),
       child: pw.Column(
         children: [
-          pw.Text(label, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+          pw.Text(
+            label,
+            style: pw.TextStyle(font: font, fontSize: 9.5, color: PdfColors.grey700),
+          ),
           pw.SizedBox(height: 4),
-          pw.Text(value, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              font: boldFont,
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: const PdfColor.fromInt(0xFF1B4D3E),
+            ),
+          ),
         ],
       ),
     );

@@ -52,8 +52,44 @@ class CareTaskService {
     return CareTask.fromJson(row);
   }
 
+  /// Update an existing care task
+  Future<CareTask> updateCareTask({
+    required String taskId,
+    required String title,
+    String? description,
+    String taskType = 'other',
+    DateTime? dueAt,
+    int? repeatEveryDays,
+  }) async {
+    final now = DateTime.now();
+    final normalizedType = ['watering', 'fertilizing', 'pruning', 'inspection', 'other']
+            .contains(taskType)
+        ? taskType
+        : 'other';
+
+    final row = await _client
+        .from('care_tasks')
+        .update({
+          'title': title,
+          'description': description,
+          'task_type': normalizedType,
+          'due_at': (dueAt ?? now).toIso8601String(),
+          'repeat_every_days': repeatEveryDays,
+          'updated_at': now.toIso8601String(),
+        })
+        .eq('id', taskId)
+        .select()
+        .single();
+
+    return CareTask.fromJson(row);
+  }
+
   /// Mark a care task as completed and automatically schedule recurring task if applicable
   Future<CareTask> completeCareTask(CareTask task) async {
+    if (task.isCompleted) {
+      return task;
+    }
+
     final user = _client.auth.currentUser;
     final now = DateTime.now();
 
@@ -69,7 +105,7 @@ class CareTaskService {
         .select()
         .single();
 
-    // If recurring, schedule next occurrence
+    // If recurring, schedule next occurrence idempotently
     if (task.repeatEveryDays != null && task.repeatEveryDays! > 0) {
       final nextDue = now.add(Duration(days: task.repeatEveryDays!));
       final normalizedType = ['watering', 'fertilizing', 'pruning', 'inspection', 'other']
@@ -77,16 +113,28 @@ class CareTaskService {
           ? task.taskType
           : 'other';
 
-      await _client.from('care_tasks').insert({
-        'plant_id': task.plantId,
-        'created_by': user?.id,
-        'title': task.title,
-        'description': task.description,
-        'task_type': normalizedType,
-        'due_at': nextDue.toIso8601String(),
-        'repeat_every_days': task.repeatEveryDays,
-        'status': 'pending',
-      });
+      // Verify no pending occurrence of the same recurring task already exists
+      final existingFuture = await _client
+          .from('care_tasks')
+          .select('id')
+          .eq('plant_id', task.plantId)
+          .eq('title', task.title)
+          .eq('status', 'pending')
+          .gte('due_at', now.toIso8601String())
+          .maybeSingle();
+
+      if (existingFuture == null) {
+        await _client.from('care_tasks').insert({
+          'plant_id': task.plantId,
+          'created_by': user?.id,
+          'title': task.title,
+          'description': task.description,
+          'task_type': normalizedType,
+          'due_at': nextDue.toIso8601String(),
+          'repeat_every_days': task.repeatEveryDays,
+          'status': 'pending',
+        });
+      }
     }
 
     return CareTask.fromJson(updatedRow);

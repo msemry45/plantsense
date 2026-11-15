@@ -34,6 +34,7 @@ class _CareTasksScreenState extends State<CareTasksScreen>
   List<CareTask> _tasks = [];
   bool _isLoading = true;
   String? _errorMessage;
+  final Set<String> _completingTaskIds = {};
 
   @override
   void initState() {
@@ -89,15 +90,34 @@ class _CareTasksScreenState extends State<CareTasksScreen>
   }
 
   Future<void> _completeTask(CareTask task) async {
-    if (widget.isViewer) return;
+    if (widget.isViewer || _completingTaskIds.contains(task.id)) return;
+
+    setState(() => _completingTaskIds.add(task.id));
+    final isArabic = context.l10n.isArabic;
+
     try {
       await _service.completeCareTask(task);
       await _loadTasks();
       if (mounted) {
+        // Switch tab to completed tasks history
+        _tabController.animateTo(1);
+
+        final String successMessage;
+        if (task.repeatEveryDays != null && task.repeatEveryDays! > 0) {
+          final nextDue = DateTime.now().add(Duration(days: task.repeatEveryDays!));
+          final dateStr =
+              '${nextDue.year}-${nextDue.month.toString().padLeft(2, '0')}-${nextDue.day.toString().padLeft(2, '0')}';
+          successMessage = isArabic
+              ? 'تم إكمال المهمة بنجاح. الموعد القادم: $dateStr'
+              : 'Task completed successfully. Next due date: $dateStr';
+        } else {
+          successMessage = context.l10n.taskCompletedSuccess;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.primary,
-            content: Text(context.l10n.taskCompletedSuccess),
+            content: Text(successMessage),
           ),
         );
       }
@@ -109,6 +129,10 @@ class _CareTasksScreenState extends State<CareTasksScreen>
             content: Text(e.toString().replaceFirst('Exception: ', '')),
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _completingTaskIds.remove(task.id));
       }
     }
   }
@@ -146,123 +170,284 @@ class _CareTasksScreenState extends State<CareTasksScreen>
     }
   }
 
-  void _showAddTaskDialog() {
+  void _showTaskDialog({CareTask? existingTask}) {
     final l10n = context.l10n;
     final isArabic = l10n.isArabic;
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final repeatCtrl = TextEditingController(text: '3');
-    String selectedType = 'watering';
-    DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
+    final isEditing = existingTask != null;
+
+    final formKey = GlobalKey<FormState>();
+    final titleCtrl = TextEditingController(text: existingTask?.title ?? '');
+    final customTypeCtrl =
+        TextEditingController(text: existingTask?.customTaskTypeName ?? '');
+    final descCtrl =
+        TextEditingController(text: existingTask?.cleanDescription ?? '');
+
+    bool isRecurring = existingTask != null
+        ? (existingTask.repeatEveryDays != null && existingTask.repeatEveryDays! > 0)
+        : true;
+    final repeatCtrl = TextEditingController(
+      text: existingTask != null
+          ? (existingTask.repeatEveryDays?.toString() ?? '')
+          : '3',
+    );
+
+    String selectedType = existingTask != null ? existingTask.taskType : 'watering';
+    final now = DateTime.now();
+    DateTime selectedDate = existingTask?.dueAt ?? now.add(const Duration(days: 1));
+    bool isSaving = false;
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(l10n.addCareTask),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: titleCtrl,
-                  decoration: InputDecoration(
-                    labelText: l10n.taskTitle,
-                    hintText: isArabic ? 'مثال: ري خفيف، تسميد NPK' : 'e.g. Light watering',
+          title: Text(isEditing
+              ? (isArabic ? 'تعديل مهمة عناية' : 'Edit Care Task')
+              : l10n.addCareTask),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: titleCtrl,
+                    decoration: InputDecoration(
+                      labelText: isArabic ? 'عنوان المهمة *' : 'Task Title *',
+                      hintText: isArabic
+                          ? 'مثال: ري خفيف، تسميد NPK'
+                          : 'e.g. Light watering',
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return isArabic
+                            ? 'يرجى إدخال عنوان المهمة'
+                            : 'Please enter task title';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedType,
-                  decoration: InputDecoration(labelText: l10n.taskType),
-                  items: [
-                    DropdownMenuItem(value: 'watering', child: Text(isArabic ? 'ري' : 'Watering')),
-                    DropdownMenuItem(value: 'fertilizing', child: Text(isArabic ? 'تسميد' : 'Fertilizing')),
-                    DropdownMenuItem(value: 'pruning', child: Text(isArabic ? 'تقليم' : 'Pruning')),
-                    DropdownMenuItem(value: 'inspection', child: Text(isArabic ? 'مراقبة وفحص' : 'Inspection')),
-                    DropdownMenuItem(value: 'other', child: Text(isArabic ? 'أخرى' : 'Other')),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedType,
+                    decoration: InputDecoration(labelText: l10n.taskType),
+                    items: [
+                      DropdownMenuItem(
+                          value: 'watering', child: Text(isArabic ? 'ري' : 'Watering')),
+                      DropdownMenuItem(
+                          value: 'fertilizing',
+                          child: Text(isArabic ? 'تسميد' : 'Fertilizing')),
+                      DropdownMenuItem(
+                          value: 'pruning',
+                          child: Text(isArabic ? 'تقليم' : 'Pruning')),
+                      DropdownMenuItem(
+                          value: 'inspection',
+                          child: Text(isArabic ? 'مراقبة وفحص' : 'Inspection')),
+                      DropdownMenuItem(
+                          value: 'other', child: Text(isArabic ? 'أخرى' : 'Other')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setDialogState(() => selectedType = val);
+                    },
+                  ),
+                  if (selectedType == 'other') ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: customTypeCtrl,
+                      decoration: InputDecoration(
+                        labelText:
+                            isArabic ? 'اسم نوع المهمة المخصص *' : 'Custom Task Type *',
+                        hintText: isArabic
+                            ? 'مثال: رش مبيد، تدفئة شتوية'
+                            : 'e.g. Pest spray, Winter heating',
+                      ),
+                      validator: (val) {
+                        if (selectedType == 'other' && (val == null || val.trim().isEmpty)) {
+                          return isArabic
+                              ? 'يرجى كتابة اسم نوع المهمة المخصص'
+                              : 'Please enter custom task type';
+                        }
+                        return null;
+                      },
+                    ),
                   ],
-                  onChanged: (val) {
-                    if (val != null) setDialogState(() => selectedType = val);
-                  },
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.calendar_today_rounded, color: AppColors.primary),
-                  title: Text(l10n.dueDate),
-                  subtitle: Text(
-                    '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.calendar_today_rounded,
+                        color: AppColors.primary),
+                    title: Text(l10n.dueDate),
+                    subtitle: Text(
+                      '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onTap: () async {
+                      final todayStart = DateTime(now.year, now.month, now.day);
+                      final initial = selectedDate.isBefore(todayStart)
+                          ? todayStart
+                          : selectedDate;
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: initial,
+                        firstDate: todayStart, // Disable past days
+                        lastDate: DateTime(now.year + 2, 12, 31),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => selectedDate = picked);
+                      }
+                    },
                   ),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                    );
-                    if (picked != null) {
-                      setDialogState(() => selectedDate = picked);
-                    }
-                  },
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: repeatCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.repeatEveryDays,
-                    hintText: '3, 7, 14...',
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(isArabic ? 'تكرار دوري للمهمة' : 'Recurring Schedule'),
+                    subtitle: Text(
+                      isArabic
+                          ? (isRecurring
+                              ? 'تتكرر تلقائياً بعد كل إنجاز'
+                              : 'بدون تكرار (مهمة لمرة واحدة)')
+                          : (isRecurring
+                              ? 'Repeats automatically after completion'
+                              : 'No repeat (one-time task)'),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    value: isRecurring,
+                    activeColor: AppColors.primary,
+                    onChanged: (val) => setDialogState(() => isRecurring = val),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: isArabic ? 'ملاحظات إضافية' : 'Notes',
+                  if (isRecurring) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: repeatCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: isArabic
+                            ? 'التكرار كل (أيام) *'
+                            : 'Repeat every (days) *',
+                        hintText: '3, 7, 14...',
+                        suffixText: isArabic ? 'يوم' : 'days',
+                      ),
+                      validator: (val) {
+                        if (isRecurring) {
+                          final n = int.tryParse(val?.trim() ?? '');
+                          if (n == null || n <= 0) {
+                            return isArabic
+                                ? 'أدخل عدد أيام صحيح أكبر من 0'
+                                : 'Enter valid days (> 0)';
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: descCtrl,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      labelText:
+                          isArabic ? 'ملاحظات إضافية (اختياري)' : 'Additional Notes (optional)',
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
+              onPressed: isSaving ? null : () => Navigator.of(ctx).pop(),
               child: Text(l10n.cancel),
             ),
             ElevatedButton(
-              onPressed: () async {
-                final title = titleCtrl.text.trim();
-                if (title.isEmpty) return;
-                Navigator.of(ctx).pop();
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      if (!formKey.currentState!.validate()) return;
+                      setDialogState(() => isSaving = true);
 
-                final repeatDays = int.tryParse(repeatCtrl.text.trim());
-                try {
-                  await _service.createCareTask(
-                    plantId: widget.plant.id,
-                    title: title,
-                    description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
-                    taskType: selectedType,
-                    dueAt: selectedDate,
-                    repeatEveryDays: repeatDays,
-                  );
-                  await _loadTasks();
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: AppColors.error,
-                        content: Text(e.toString().replaceFirst('Exception: ', '')),
-                      ),
-                    );
-                  }
-                }
-              },
-              child: Text(l10n.save),
+                      // If selected today, set due time to 23:59:59 so it stays due today and not immediately overdue
+                      final isToday = selectedDate.year == now.year &&
+                          selectedDate.month == now.month &&
+                          selectedDate.day == now.day;
+                      final effectiveDueAt = isToday
+                          ? DateTime(
+                              selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59)
+                          : DateTime(
+                              selectedDate.year, selectedDate.month, selectedDate.day, 12, 0, 0);
+
+                      final notes = descCtrl.text.trim();
+                      final String? finalDescription;
+                      if (selectedType == 'other') {
+                        final customName = customTypeCtrl.text.trim();
+                        finalDescription =
+                            notes.isEmpty ? '[نوع: $customName]' : '[نوع: $customName] $notes';
+                      } else {
+                        finalDescription = notes.isEmpty ? null : notes;
+                      }
+
+                      final repeatDays =
+                          isRecurring ? int.tryParse(repeatCtrl.text.trim()) : null;
+
+                      try {
+                        if (isEditing) {
+                          await _service.updateCareTask(
+                            taskId: existingTask.id,
+                            title: titleCtrl.text.trim(),
+                            description: finalDescription,
+                            taskType: selectedType,
+                            dueAt: effectiveDueAt,
+                            repeatEveryDays: repeatDays,
+                          );
+                        } else {
+                          await _service.createCareTask(
+                            plantId: widget.plant.id,
+                            title: titleCtrl.text.trim(),
+                            description: finalDescription,
+                            taskType: selectedType,
+                            dueAt: effectiveDueAt,
+                            repeatEveryDays: repeatDays,
+                          );
+                        }
+                        if (mounted) {
+                          Navigator.of(ctx).pop();
+                        }
+                        await _loadTasks();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: AppColors.primary,
+                              content: Text(isEditing
+                                  ? (isArabic
+                                      ? 'تم تحديث المهمة بنجاح.'
+                                      : 'Task updated successfully.')
+                                  : (isArabic
+                                      ? 'تمت إضافة المهمة بنجاح.'
+                                      : 'Task added successfully.')),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isSaving = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: AppColors.error,
+                              content:
+                                  Text(e.toString().replaceFirst('Exception: ', '')),
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(l10n.save),
             ),
           ],
         ),
@@ -322,7 +507,7 @@ class _CareTasksScreenState extends State<CareTasksScreen>
       floatingActionButton: widget.isViewer
           ? null
           : FloatingActionButton.extended(
-              onPressed: _showAddTaskDialog,
+              onPressed: () => _showTaskDialog(),
               backgroundColor: AppColors.primary,
               icon: const Icon(Icons.add_task_rounded, color: Colors.white),
               label: Text(l10n.addCareTask, style: const TextStyle(color: Colors.white)),
@@ -450,7 +635,7 @@ class _CareTasksScreenState extends State<CareTasksScreen>
                                                   child: Text(
                                                     isOverdue
                                                         ? (isArabic ? 'متأخرة' : 'Overdue')
-                                                        : task.localizedTaskType(isArabic),
+                                                        : task.displayTaskType(isArabic),
                                                     style: TextStyle(
                                                       fontSize: 11,
                                                       fontWeight: FontWeight.bold,
@@ -462,10 +647,10 @@ class _CareTasksScreenState extends State<CareTasksScreen>
                                                 ),
                                               ],
                                             ),
-                                            if (task.description != null) ...[
+                                            if (task.cleanDescription.isNotEmpty) ...[
                                               const SizedBox(height: 4),
                                               Text(
-                                                task.description!,
+                                                task.cleanDescription,
                                                 style: TextStyle(
                                                   fontSize: 13,
                                                   color: AppColors.dark.withOpacity(0.7),
@@ -506,10 +691,30 @@ class _CareTasksScreenState extends State<CareTasksScreen>
                                         ),
                                       ),
                                       if (!widget.isViewer) ...[
-                                        IconButton(
-                                          icon: const Icon(Icons.check_circle_outline, color: AppColors.primary, size: 28),
-                                          tooltip: l10n.markAsCompleted,
-                                          onPressed: () => _completeTask(task),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 22),
+                                              tooltip: isArabic ? 'تعديل المهمة' : 'Edit Task',
+                                              onPressed: () => _showTaskDialog(existingTask: task),
+                                            ),
+                                            if (_completingTaskIds.contains(task.id))
+                                              const Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: SizedBox(
+                                                  width: 22,
+                                                  height: 22,
+                                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                                ),
+                                              )
+                                            else
+                                              IconButton(
+                                                icon: const Icon(Icons.check_circle_outline, color: AppColors.primary, size: 28),
+                                                tooltip: l10n.markAsCompleted,
+                                                onPressed: () => _completeTask(task),
+                                              ),
+                                          ],
                                         ),
                                       ],
                                     ],

@@ -325,6 +325,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 Expanded(
                                   child: DropdownButtonFormField<String?>(
                                     value: _selectedPlantId,
+                                    isExpanded: true,
                                     decoration: InputDecoration(
                                       labelText: l10n.filterByPlant,
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -332,7 +333,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                     items: [
                                       DropdownMenuItem(
                                         value: null,
-                                        child: Text(isArabic ? 'كافة النباتات' : 'All Plants'),
+                                        child: Text(isArabic ? 'كافة النباتات' : 'All Plants', overflow: TextOverflow.ellipsis),
                                       ),
                                       ..._plants.map((p) => DropdownMenuItem(
                                             value: p.id,
@@ -349,15 +350,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 Expanded(
                                   child: DropdownButtonFormField<int?>(
                                     value: _selectedDays,
+                                    isExpanded: true,
                                     decoration: InputDecoration(
                                       labelText: l10n.filterByDate,
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                     ),
                                     items: [
-                                      DropdownMenuItem(value: 7, child: Text(isArabic ? 'آخر 7 أيام' : 'Last 7 Days')),
-                                      DropdownMenuItem(value: 30, child: Text(isArabic ? 'آخر 30 يوماً' : 'Last 30 Days')),
-                                      DropdownMenuItem(value: 90, child: Text(isArabic ? 'آخر 90 يوماً' : 'Last 90 Days')),
-                                      DropdownMenuItem(value: null, child: Text(isArabic ? 'كافة الفترات' : 'All Time')),
+                                      DropdownMenuItem(value: 7, child: Text(isArabic ? 'آخر 7 أيام' : 'Last 7 Days', overflow: TextOverflow.ellipsis)),
+                                      DropdownMenuItem(value: 30, child: Text(isArabic ? 'آخر 30 يوماً' : 'Last 30 Days', overflow: TextOverflow.ellipsis)),
+                                      DropdownMenuItem(value: 90, child: Text(isArabic ? 'آخر 90 يوماً' : 'Last 90 Days', overflow: TextOverflow.ellipsis)),
+                                      DropdownMenuItem(value: null, child: Text(isArabic ? 'كافة الفترات' : 'All Time', overflow: TextOverflow.ellipsis)),
                                     ],
                                     onChanged: (val) {
                                       setState(() => _selectedDays = val);
@@ -442,15 +444,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.compare_arrows_rounded, color: AppColors.primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        l10n.compareTrends,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                      ),
-                                    ],
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.compare_arrows_rounded, color: AppColors.primary),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            l10n.compareTrends,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   Switch(
                                     value: _showComparison,
@@ -461,32 +467,85 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               ),
                               if (_showComparison && _summaries.length >= 2) ...[
                                 const Divider(height: 24),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: DropdownButtonFormField<PlantAnalyticsSummary>(
-                                        value: _comparePlantA,
-                                        decoration: InputDecoration(labelText: l10n.selectPlantA),
-                                        items: _summaries.map((s) => DropdownMenuItem(
-                                          value: s,
-                                          child: Text(s.plantName, overflow: TextOverflow.ellipsis),
-                                        )).toList(),
-                                        onChanged: (val) => setState(() => _comparePlantA = val),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: DropdownButtonFormField<PlantAnalyticsSummary>(
-                                        value: _comparePlantB,
-                                        decoration: InputDecoration(labelText: l10n.selectPlantB),
-                                        items: _summaries.map((s) => DropdownMenuItem(
-                                          value: s,
-                                          child: Text(s.plantName, overflow: TextOverflow.ellipsis),
-                                        )).toList(),
-                                        onChanged: (val) => setState(() => _comparePlantB = val),
-                                      ),
-                                    ),
-                                  ],
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final isNarrow = constraints.maxWidth < 420;
+                                    final dropdownA = DropdownButtonFormField<PlantAnalyticsSummary>(
+                                      value: _comparePlantA,
+                                      isExpanded: true,
+                                      decoration: InputDecoration(labelText: l10n.selectPlantA),
+                                      selectedItemBuilder: (context) {
+                                        return _summaries.map((s) {
+                                          return Align(
+                                            alignment: isArabic ? Alignment.centerRight : Alignment.centerLeft,
+                                            child: Text(
+                                              s.plantName,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              softWrap: false,
+                                            ),
+                                          );
+                                        }).toList();
+                                      },
+                                      items: _summaries.map((s) => DropdownMenuItem(
+                                        value: s,
+                                        child: Text(
+                                          s.plantName,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: true,
+                                        ),
+                                      )).toList(),
+                                      onChanged: (val) => setState(() => _comparePlantA = val),
+                                    );
+
+                                    final dropdownB = DropdownButtonFormField<PlantAnalyticsSummary>(
+                                      value: _comparePlantB,
+                                      isExpanded: true,
+                                      decoration: InputDecoration(labelText: l10n.selectPlantB),
+                                      selectedItemBuilder: (context) {
+                                        return _summaries.map((s) {
+                                          return Align(
+                                            alignment: isArabic ? Alignment.centerRight : Alignment.centerLeft,
+                                            child: Text(
+                                              s.plantName,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              softWrap: false,
+                                            ),
+                                          );
+                                        }).toList();
+                                      },
+                                      items: _summaries.map((s) => DropdownMenuItem(
+                                        value: s,
+                                        child: Text(
+                                          s.plantName,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: true,
+                                        ),
+                                      )).toList(),
+                                      onChanged: (val) => setState(() => _comparePlantB = val),
+                                    );
+
+                                    if (isNarrow) {
+                                      return Column(
+                                        children: [
+                                          dropdownA,
+                                          const SizedBox(height: 12),
+                                          dropdownB,
+                                        ],
+                                      );
+                                    } else {
+                                      return Row(
+                                        children: [
+                                          Expanded(child: dropdownA),
+                                          const SizedBox(width: 12),
+                                          Expanded(child: dropdownB),
+                                        ],
+                                      );
+                                    }
+                                  },
                                 ),
                                 const SizedBox(height: 16),
                                 if (_comparePlantA != null && _comparePlantB != null) ...[
@@ -520,10 +579,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    item.plantName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                  Expanded(
+                                    child: Text(
+                                      item.plantName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
+                                  const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
@@ -598,12 +662,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildStatColumn(String label, String value) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-      ],
+    return Expanded(
+      child: Column(
+        children: [
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
     );
   }
 
@@ -616,17 +688,44 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       child: Table(
         columnWidths: const {
-          0: FlexColumnWidth(2),
-          1: FlexColumnWidth(2),
-          2: FlexColumnWidth(2),
+          0: FlexColumnWidth(1.2),
+          1: FlexColumnWidth(1.4),
+          2: FlexColumnWidth(1.4),
         },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: [
           TableRow(
             decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5))),
             children: [
-              Padding(padding: const EdgeInsets.all(6), child: Text(isArabic ? 'المؤشر' : 'Metric', style: const TextStyle(fontWeight: FontWeight.bold))),
-              Padding(padding: const EdgeInsets.all(6), child: Text(a.plantName, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary))),
-              Padding(padding: const EdgeInsets.all(6), child: Text(b.plantName, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00796B)))),
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Text(
+                  isArabic ? 'المؤشر' : 'Metric',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Text(
+                  a.plantName,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Text(
+                  b.plantName,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00796B)),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ],
           ),
           _buildCompareRow(isArabic ? 'العمر' : 'Age', '${a.ageDays} يوم', '${b.ageDays} يوم'),

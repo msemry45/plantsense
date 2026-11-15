@@ -84,6 +84,46 @@ void main() {
       expect(completed.completedBy, 'user-1');
       expect(completed.localizedTaskType(true), 'تسميد');
     });
+
+    test('CareTask handles custom task type stored in description properly', () {
+      final now = DateTime.now();
+      final customTask = CareTask(
+        id: 'task-custom',
+        plantId: 'plant-1',
+        createdBy: 'user-1',
+        title: 'رش وقائي',
+        description: '[نوع: مكافحة آفات عضوية] رش المحلول مساءً كل أسبوعين',
+        taskType: 'other',
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      expect(customTask.customTaskTypeName, 'مكافحة آفات عضوية');
+      expect(customTask.cleanDescription, 'رش المحلول مساءً كل أسبوعين');
+      expect(customTask.displayTaskType(true), 'مكافحة آفات عضوية');
+      expect(customTask.displayTaskType(false), 'مكافحة آفات عضوية');
+    });
+
+    test('CareTask handles today due date properly without false overdue trigger', () {
+      final now = DateTime.now();
+      // End of today
+      final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      final todayTask = CareTask(
+        id: 'task-today',
+        plantId: 'plant-1',
+        createdBy: 'user-1',
+        title: 'مهمة مستحقة اليوم',
+        dueAt: endOfToday,
+        taskType: 'watering',
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      // Should NOT be overdue on the same day
+      expect(todayTask.isOverdue, isFalse);
+    });
   });
 
   group('M5 — NotificationItem Model Tests', () {
