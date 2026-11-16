@@ -419,8 +419,8 @@ ${speciesInfo}
       return new Response(
         JSON.stringify({
           error: language === "ar"
-            ? "مفتاح Gemini غير معرّف في أسرار السيرفر (GEMINI_API_KEY). يرجى تعيينه في Supabase Dashboard > Project Settings > Secrets."
-            : "Gemini API key is not configured in Supabase Secrets (GEMINI_API_KEY).",
+            ? "خدمة تحليل الصور غير متاحة حاليًا."
+            : "Image analysis is currently unavailable.",
           retryable: false,
         }),
         { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
