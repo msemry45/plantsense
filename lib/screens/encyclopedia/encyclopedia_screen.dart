@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/species.dart';
 import '../../services/species_service.dart';
 import '../../theme/app_theme.dart';
@@ -94,12 +95,35 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                   ),
                 ),
               ),
+              if (species.imagePath != null && species.imagePath!.startsWith('http')) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    species.imagePath!,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 28,
                     backgroundColor: AppColors.lightGreen,
-                    child: Icon(Icons.eco_rounded, color: AppColors.primary, size: 30),
+                    child: ClipOval(
+                      child: species.imagePath != null && species.imagePath!.startsWith('http')
+                          ? Image.network(
+                              species.imagePath!,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppColors.primary, size: 30),
+                            )
+                          : const Icon(Icons.eco_rounded, color: AppColors.primary, size: 30),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -210,6 +234,82 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                       height: 1.5,
                       color: AppColors.dark,
                     ),
+                  ),
+                ),
+              ],
+              if (species.sourceUrl != null || species.attribution != null || species.license != null) ...[
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.menu_book_outlined, size: 18, color: AppColors.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.sourceWikipedia,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontFamily,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.dark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (species.attribution != null || species.license != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          [
+                            if (species.attribution != null) '${l10n.authorLabel}: ${species.attribution}',
+                            if (species.license != null) '${l10n.licenseLabel}: ${species.license}',
+                          ].join(' • '),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.dark.withOpacity(0.65),
+                          ),
+                        ),
+                      ],
+                      if (species.sourceUrl != null) ...[
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () async {
+                            final rawUrl = species.sourceUrl?.trim() ?? '';
+                            final uri = Uri.tryParse(rawUrl);
+                            if (uri != null && (uri.isScheme('http') || uri.isScheme('https'))) {
+                              try {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } catch (e) {
+                                debugPrint('[Encyclopedia] Failed to launch article URL: $e');
+                              }
+                            }
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                l10n.openWikipediaArticle,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.open_in_new, size: 14, color: AppColors.primary),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
@@ -345,10 +445,24 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                                 ),
                                 child: ListTile(
                                   contentPadding: const EdgeInsets.all(16),
-                                  leading: const CircleAvatar(
+                                  leading: CircleAvatar(
                                     radius: 26,
                                     backgroundColor: AppColors.lightGreen,
-                                    child: Icon(Icons.spa_rounded, color: AppColors.primary, size: 28),
+                                    child: ClipOval(
+                                      child: sp.imagePath != null && sp.imagePath!.startsWith('http')
+                                          ? Image.network(
+                                              sp.imagePath!,
+                                              width: 52,
+                                              height: 52,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => const Icon(
+                                                Icons.spa_rounded,
+                                                color: AppColors.primary,
+                                                size: 28,
+                                              ),
+                                            )
+                                          : const Icon(Icons.spa_rounded, color: AppColors.primary, size: 28),
+                                    ),
                                   ),
                                   title: Text(
                                     sp.localizedName(l10n.isArabic),

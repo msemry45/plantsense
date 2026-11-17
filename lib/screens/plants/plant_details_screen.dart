@@ -1091,18 +1091,31 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop(); // dismiss dialog
+        final errStr = e.toString().toLowerCase();
+        // Technical and exception details kept in debug logs only
+        debugPrint('[PlantAnalysis] Analysis error: $e');
+
+        final isRetryable = errStr.contains('503') ||
+            errStr.contains('500') ||
+            errStr.contains('timeout') ||
+            errStr.contains('socket') ||
+            errStr.contains('network') ||
+            errStr.contains('connection') ||
+            errStr.contains('retryable') ||
+            errStr.contains('temporarily unavailable');
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 7),
-            content: Text(
-              '${l10n.aiAnalysisFailedMessage}\n${e.toString().replaceFirst("Exception: ", "")}',
-            ),
-            action: SnackBarAction(
-              label: l10n.isArabic ? 'إعادة المحاولة' : 'Retry',
-              textColor: Colors.white,
-              onPressed: () => _triggerLeafAnalysis(plant),
-            ),
+            duration: const Duration(seconds: 5),
+            content: Text(l10n.aiAnalysisFailedMessage),
+            action: isRetryable
+                ? SnackBarAction(
+                    label: l10n.isArabic ? 'إعادة المحاولة' : 'Retry',
+                    textColor: Colors.white,
+                    onPressed: () => _triggerLeafAnalysis(plant),
+                  )
+                : null,
           ),
         );
       }

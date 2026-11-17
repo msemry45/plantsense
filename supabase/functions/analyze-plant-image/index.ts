@@ -408,6 +408,9 @@ ${speciesInfo}
 
     // Call Gemini with model fallback and safe timeout
     const candidateModels = [
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-flash-8b",
       "gemini-3.5-flash-lite",
       "gemini-3.1-flash-lite",
       "gemini-flash-lite-latest",
@@ -419,11 +422,11 @@ ${speciesInfo}
       return new Response(
         JSON.stringify({
           error: language === "ar"
-            ? "خدمة تحليل الصور غير متاحة حاليًا."
-            : "Image analysis is currently unavailable.",
+            ? "تعذّر إتمام فحص الصورة حالياً. جرّب لاحقاً."
+            : "Unable to complete image analysis right now. Please try again later.",
           retryable: false,
         }),
-        { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        { status: 503, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
       );
     }
     console.log("Using Gemini model selection from server secret. Key prefix:", effectiveGeminiKey.substring(0, 5), "len:", effectiveGeminiKey.length);
@@ -489,8 +492,8 @@ ${speciesInfo}
       return new Response(
         JSON.stringify({
           error: language === "ar"
-            ? "خدمة تحليل الذكاء الاصطناعي غير متاحة مؤقتاً، يرجى المحاولة بعد لحظات."
-            : "AI visual analysis service is temporarily unavailable. Please retry shortly.",
+            ? "تعذّر إتمام فحص الصورة حالياً. جرّب لاحقاً."
+            : "Unable to complete image analysis right now. Please try again later.",
           retryable: true,
         }),
         { status: 503, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }

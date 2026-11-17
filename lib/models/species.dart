@@ -10,6 +10,9 @@ class Species {
   final double? idealHumidityMax;
   final String? idealLightConditions;
   final String? imagePath;
+  final String? sourceUrl;
+  final String? license;
+  final String? attribution;
   final bool isPublished;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -26,6 +29,9 @@ class Species {
     this.idealHumidityMax,
     this.idealLightConditions,
     this.imagePath,
+    this.sourceUrl,
+    this.license,
+    this.attribution,
     this.isPublished = false,
     required this.createdAt,
     required this.updatedAt,
@@ -52,6 +58,9 @@ class Species {
           : null,
       idealLightConditions: json['ideal_light_conditions'] as String?,
       imagePath: json['image_path'] as String?,
+      sourceUrl: json['source_url'] as String?,
+      license: json['license'] as String?,
+      attribution: json['attribution'] as String?,
       isPublished: (json['is_published'] as bool?) ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
@@ -75,6 +84,9 @@ class Species {
       'ideal_humidity_max': idealHumidityMax,
       'ideal_light_conditions': idealLightConditions,
       'image_path': imagePath,
+      'source_url': sourceUrl,
+      'license': license,
+      'attribution': attribution,
       'is_published': isPublished,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),

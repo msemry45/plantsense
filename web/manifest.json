@@ -1,6 +1,6 @@
 {
-    "name": "plantsense",
-    "short_name": "plantsense",
+    "name": "SVPG",
+    "short_name": "SVPG",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

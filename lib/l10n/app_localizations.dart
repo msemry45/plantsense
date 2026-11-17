@@ -63,6 +63,16 @@ class AppLocalizations {
   String get logoutConfirmContent => isArabic ? 'هل تريد تسجيل الخروج من حسابك؟' : 'Are you sure you want to log out?';
   String get continueAsGuest => isArabic ? 'المتابعة كزائر' : 'Continue as Guest';
   String get continueWithGoogle => isArabic ? 'المتابعة باستخدام Google' : 'Continue with Google';
+  String get signUpWithGoogle => isArabic ? 'التسجيل باستخدام Google' : 'Sign up with Google';
+  String get googleSignInCancelled => isArabic
+      ? 'تم إلغاء عملية تسجيل الدخول باستخدام Google.'
+      : 'Google sign-in was cancelled.';
+  String get networkError => isArabic
+      ? 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.'
+      : 'Network error. Please check your internet connection.';
+  String get unableToCompleteAnalysis => isArabic
+      ? 'تعذّر إتمام فحص الصورة حالياً. جرّب لاحقاً.'
+      : 'Unable to complete image analysis right now. Please try again later.';
   String get welcomeBack => isArabic ? 'أهلاً بك مجدداً في SVPG' : 'Welcome back to SVPG';
   String get createNewAccountHeader => isArabic ? 'انضم إلى نظام المراقبة الزراعية الذكي' : 'Join the Smart Plant Monitoring System';
   String get resetPasswordInstruction => isArabic
@@ -224,7 +234,9 @@ class AppLocalizations {
   String get latestAnalysisBadge => isArabic ? 'آخر فحص' : 'Latest Analysis';
   String get cachedDiagnosisNotice => isArabic ? 'تم جلب نتيجة سابقة محفوظة لهذه الصورة.' : 'Retrieved cached diagnosis for this photo.';
   String get photoRequiredForAIAnalysis => isArabic ? 'يرجى رفع صورة أولاً لإجراء الفحص بالذكاء الاصطناعي.' : 'Please upload a photo first to run AI leaf analysis.';
-  String get aiAnalysisFailedMessage => isArabic ? 'تعذر إتمام الفحص البصري حالياً، يرجى المحاولة لاحقاً.' : 'Unable to complete visual analysis at this time. Please try again later.';
+  String get aiAnalysisFailedMessage => isArabic
+      ? 'تعذّر إتمام فحص الصورة حالياً. جرّب لاحقاً.'
+      : 'Unable to complete image analysis right now. Please try again later.';
   String get analyzeNowCheckboxPrompt => isArabic ? 'فحص الورقة بالذكاء الاصطناعي فور حفظ الصورة' : 'Analyze leaf condition with AI immediately after upload';
   String get deletePlantTitle => isArabic ? 'حذف النبات' : 'Delete Plant';
   String deletePlantContent(String name) => isArabic
@@ -371,6 +383,11 @@ class AppLocalizations {
   String get publishToEncyclopedia => isArabic ? 'نشر في الموسوعة' : 'Publish to Encyclopedia';
   String get unpublishFromEncyclopedia => isArabic ? 'إلغاء النشر' : 'Unpublish';
   String get manageEncyclopediaTitle => isArabic ? 'إدارة محتوى الموسوعة' : 'Manage Encyclopedia Content';
+  String get sourceWikipedia => isArabic ? 'المصدر: ويكيبيديا' : 'Source: Wikipedia';
+  String get imageAttribution => isArabic ? 'بيانات الصورة والإسناد' : 'Image Attribution & License';
+  String get licenseLabel => isArabic ? 'الترخيص' : 'License';
+  String get authorLabel => isArabic ? 'المؤلف' : 'Author';
+  String get openWikipediaArticle => isArabic ? 'عرض المقال في ويكيبيديا' : 'View on Wikipedia';
 
   // ===========================================================================
   // M6 — Analytics & Export

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/google_logo.dart';
 import '../widgets/language_toggle_button.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -213,6 +214,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    final l10n = context.l10n;
+    setState(() => _isLoading = true);
+    try {
+      await widget.authService.signInWithGoogle();
+    } on AuthException catch (e) {
+      if (mounted) {
+        final isCancel = e.message.toLowerCase().contains('cancel') ||
+            e.statusCode == 'canceled';
+        _showError(isCancel ? l10n.googleSignInCancelled : '${l10n.error}: ${e.message}');
+      }
+    } on SocketException {
+      if (mounted) {
+        _showError(l10n.networkError);
+      }
+    } catch (e) {
+      if (mounted) {
+        debugPrint('[GoogleSignUp] Unexpected error: $e');
+        final errStr = e.toString().toLowerCase();
+        if (errStr.contains('cancel')) {
+          _showError(l10n.googleSignInCancelled);
+        } else if (errStr.contains('socket') || errStr.contains('network') || errStr.contains('connection')) {
+          _showError(l10n.networkError);
+        } else {
+          _showError(l10n.isArabic
+              ? 'تعذر إتمام التسجيل عبر Google. يرجى المحاولة لاحقاً.'
+              : 'Google sign-up could not be completed. Please try again later.');
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -342,6 +377,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Text(
+                          l10n.isArabic ? 'أو' : 'OR',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.dark.withOpacity(0.4),
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  OutlinedButton(
+                    onPressed: _isLoading ? null : _handleGoogleSignIn,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: AppColors.dark.withOpacity(0.2)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const GoogleLogo(size: 20),
+                        const SizedBox(width: 12),
+                        Text(
+                          l10n.signUpWithGoogle,
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontFamily,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: AppColors.dark,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),

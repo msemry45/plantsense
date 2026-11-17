@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
@@ -83,7 +85,26 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       await widget.authService.signInWithGoogle();
-    } catch (e) {
+    } on AuthException catch (e) {
+      if (mounted) {
+        final isCancel = e.message.toLowerCase().contains('cancel') ||
+            e.statusCode == 'canceled';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.error,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(isCancel ? l10n.googleSignInCancelled : '${l10n.error}: ${e.message}'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } on SocketException {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -92,7 +113,31 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Expanded(child: Text('${l10n.error}: ${e.toString()}')),
+                Expanded(child: Text(l10n.networkError)),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        debugPrint('[GoogleSignIn] Unexpected error: $e');
+        final errStr = e.toString().toLowerCase();
+        final message = errStr.contains('cancel')
+            ? l10n.googleSignInCancelled
+            : (errStr.contains('socket') || errStr.contains('network') || errStr.contains('connection'))
+                ? l10n.networkError
+                : (l10n.isArabic
+                    ? 'تعذر إتمام تسجيل الدخول عبر Google. يرجى المحاولة لاحقاً.'
+                    : 'Google sign-in could not be completed. Please try again later.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.error,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(message)),
               ],
             ),
           ),

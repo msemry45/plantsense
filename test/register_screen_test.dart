@@ -10,11 +10,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MockAuthService extends ChangeNotifier implements AuthService {
   Exception? errorToThrow;
+  Exception? googleErrorToThrow;
   int signUpCallCount = 0;
+  int signInWithGoogleCallCount = 0;
   String? lastEmail;
   String? lastPassword;
   String? lastUsername;
   String? lastFullName;
+
+  @override
+  Future<void> signInWithGoogle() async {
+    signInWithGoogleCallCount++;
+    if (googleErrorToThrow != null) {
+      throw googleErrorToThrow!;
+    }
+  }
 
   @override
   Future<void> signUp({
@@ -203,6 +213,56 @@ void main() {
       expect(mockAuth.lastUsername, 'farmer_good');
       expect(mockAuth.lastFullName, 'مزارع تجريبي');
       expect(mockAuth.lastPassword, 'secret123');
+    });
+
+    testWidgets('Renders Google Sign Up button in Arabic and triggers signInWithGoogle', (tester) async {
+      await tester.pumpWidget(createWidget(locale: const Locale('ar')));
+      await tester.pumpAndSettle();
+
+      final googleBtn = find.text('التسجيل باستخدام Google');
+      expect(googleBtn, findsOneWidget);
+
+      await tester.ensureVisible(googleBtn);
+      await tester.tap(googleBtn);
+      await tester.pump();
+
+      expect(mockAuth.signInWithGoogleCallCount, 1);
+    });
+
+    testWidgets('Renders Google Sign Up button in English', (tester) async {
+      await tester.pumpWidget(createWidget(locale: const Locale('en')));
+      await tester.pumpAndSettle();
+
+      final googleBtn = find.text('Sign up with Google');
+      expect(googleBtn, findsOneWidget);
+    });
+
+    testWidgets('Google sign-in cancellation shows translated cancellation message', (tester) async {
+      mockAuth.googleErrorToThrow = const AuthException('User canceled OAuth flow');
+
+      await tester.pumpWidget(createWidget(locale: const Locale('ar')));
+      await tester.pumpAndSettle();
+
+      final googleBtn = find.text('التسجيل باستخدام Google');
+      await tester.ensureVisible(googleBtn);
+      await tester.tap(googleBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('تم إلغاء عملية تسجيل الدخول باستخدام Google.'), findsOneWidget);
+    });
+
+    testWidgets('Google sign-in network failure shows translated network error message', (tester) async {
+      mockAuth.googleErrorToThrow = const SocketException('Connection failed');
+
+      await tester.pumpWidget(createWidget(locale: const Locale('ar')));
+      await tester.pumpAndSettle();
+
+      final googleBtn = find.text('التسجيل باستخدام Google');
+      await tester.ensureVisible(googleBtn);
+      await tester.tap(googleBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.'), findsOneWidget);
     });
   });
 }
