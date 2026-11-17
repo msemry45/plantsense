@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plantsense/models/care_task.dart';
 import 'package:plantsense/models/notification_item.dart';
+import 'package:plantsense/models/species.dart';
 
 void main() {
   group('M5 — CareTask Model Tests', () {
@@ -357,6 +358,66 @@ void main() {
       await engine.completeCareTask(gen1);
       final pendingCount = engine.tasks.where((t) => t.status == 'pending').length;
       expect(pendingCount, 1);
+    });
+
+    test('One-time care task (repeatEveryDays = null or 0) completes into history and creates NO next task', () async {
+      final now = DateTime.now();
+      final oneTimeTask = CareTask(
+        id: 'task-onetime-1',
+        plantId: 'plant-1',
+        createdBy: 'user-1',
+        title: 'تنظيف الحوض لمرة واحدة',
+        taskType: 'other',
+        dueAt: now,
+        repeatEveryDays: null,
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      );
+      engine.tasks.add(oneTimeTask);
+
+      final completed = await engine.completeCareTask(oneTimeTask);
+      expect(completed.isCompleted, isTrue);
+
+      // Must NOT schedule any next task in pending
+      final pendingTasks = engine.tasks.where((t) => t.status == 'pending').toList();
+      expect(pendingTasks.isEmpty, isTrue);
+
+      // Completed task exists in history
+      final completedTasks = engine.tasks.where((t) => t.status == 'completed').toList();
+      expect(completedTasks.length, 1);
+      expect(completedTasks.first.id, 'task-onetime-1');
+    });
+  });
+
+  group('M5 — Species Localization & Encyclopedia Content Tests', () {
+    test('Species returns proper Arabic names, descriptions, and care guidelines', () {
+      final now = DateTime.now();
+      final tomato = Species(
+        id: 'sp-tomato',
+        commonName: 'Tomato',
+        scientificName: 'Solanum lycopersicum',
+        description: 'Popular crop',
+        careInstructions: 'Water regularly',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      expect(tomato.localizedName(true), 'طماطم (Tomato)');
+      expect(tomato.localizedName(false), 'Tomato');
+      expect(tomato.localizedDescription(true)!.contains('محصول خضري ثمري'), isTrue);
+      expect(tomato.localizedCareInstructions(true)!.contains('الري المنتظم'), isTrue);
+
+      final basil = Species(
+        id: 'sp-basil',
+        commonName: 'Sweet Basil',
+        scientificName: 'Ocimum basilicum',
+        createdAt: now,
+        updatedAt: now,
+      );
+      expect(basil.localizedName(true), 'ريحان (Sweet Basil)');
+      expect(basil.localizedName(false), 'Sweet Basil');
+      expect(basil.localizedDescription(true)!.contains('عشبي عطري'), isTrue);
     });
   });
 }

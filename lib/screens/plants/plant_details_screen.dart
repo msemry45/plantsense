@@ -397,7 +397,7 @@ class _PlantDetailsScreenState extends State<PlantDetailsScreen> {
                       if (plant.species != null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          plant.species!.commonName +
+                          plant.species!.localizedName(l10n.isArabic) +
                               (plant.species!.scientificName != null
                                   ? ' (${plant.species!.scientificName})'
                                   : ''),

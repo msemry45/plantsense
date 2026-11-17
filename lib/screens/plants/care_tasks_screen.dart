@@ -184,11 +184,11 @@ class _CareTasksScreenState extends State<CareTasksScreen>
 
     bool isRecurring = existingTask != null
         ? (existingTask.repeatEveryDays != null && existingTask.repeatEveryDays! > 0)
-        : true;
+        : false;
     final repeatCtrl = TextEditingController(
       text: existingTask != null
           ? (existingTask.repeatEveryDays?.toString() ?? '')
-          : '3',
+          : '',
     );
 
     String selectedType = existingTask != null ? existingTask.taskType : 'watering';
@@ -286,12 +286,14 @@ class _CareTasksScreenState extends State<CareTasksScreen>
                     onTap: () async {
                       final todayStart = DateTime(now.year, now.month, now.day);
                       final initial = selectedDate.isBefore(todayStart)
-                          ? todayStart
+                          ? (isEditing ? selectedDate : todayStart)
                           : selectedDate;
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: initial,
-                        firstDate: todayStart, // Disable past days
+                        firstDate: isEditing && selectedDate.isBefore(todayStart)
+                            ? selectedDate
+                            : todayStart, // For new tasks, strictly disable past days
                         lastDate: DateTime(now.year + 2, 12, 31),
                       );
                       if (picked != null) {
@@ -315,7 +317,12 @@ class _CareTasksScreenState extends State<CareTasksScreen>
                     ),
                     value: isRecurring,
                     activeColor: AppColors.primary,
-                    onChanged: (val) => setDialogState(() => isRecurring = val),
+                    onChanged: (val) => setDialogState(() {
+                      isRecurring = val;
+                      if (val && repeatCtrl.text.trim().isEmpty) {
+                        repeatCtrl.text = '3';
+                      }
+                    }),
                   ),
                   if (isRecurring) ...[
                     const SizedBox(height: 8),
@@ -365,6 +372,20 @@ class _CareTasksScreenState extends State<CareTasksScreen>
                   ? null
                   : () async {
                       if (!formKey.currentState!.validate()) return;
+
+                      final todayStart = DateTime(now.year, now.month, now.day);
+                      if (!isEditing && selectedDate.isBefore(todayStart)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: AppColors.error,
+                            content: Text(isArabic
+                                ? 'لا يمكن تحديد تاريخ استحقاق في الماضي للمهمة الجديدة.'
+                                : 'Due date cannot be in the past for a new task.'),
+                          ),
+                        );
+                        return;
+                      }
+
                       setDialogState(() => isSaving = true);
 
                       // If selected today, set due time to 23:59:59 so it stays due today and not immediately overdue

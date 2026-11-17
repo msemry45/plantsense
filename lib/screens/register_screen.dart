@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
@@ -36,38 +39,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     final l10n = context.l10n;
+    final isArabic = l10n.isArabic;
+    final name = _nameController.text.trim();
+    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
+    // 1. Client-side field validations before sending any network request
+    if (name.isEmpty) {
+      _showWarning(isArabic ? 'يرجى إدخال الاسم الكامل.' : 'Please enter your full name.');
+      return;
+    }
+    if (name.length < 2) {
+      _showWarning(isArabic ? 'الاسم الكامل يجب أن يتكون من حرفين على الأقل.' : 'Full name must be at least 2 characters.');
+      return;
+    }
+
+    if (username.isEmpty) {
+      _showWarning(isArabic ? 'يرجى إدخال اسم المستخدم.' : 'Please enter a username.');
+      return;
+    }
+    if (username.length < 3) {
+      _showWarning(isArabic ? 'اسم المستخدم يجب أن يتكون من 3 أحرف أو أرقام على الأقل.' : 'Username must be at least 3 characters.');
+      return;
+    }
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
+      _showWarning(isArabic ? 'اسم المستخدم يمكن أن يحتوي على أحرف وأرقام وشرطة سفلية فقط.' : 'Username can only contain letters, numbers, and underscores.');
+      return;
+    }
+
+    if (email.isEmpty) {
+      _showWarning(isArabic ? 'يرجى إدخال البريد الإلكتروني.' : 'Please enter your email address.');
+      return;
+    }
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      _showWarning(isArabic ? 'يرجى إدخال بريد إلكتروني صالح (مثال: name@example.com).' : 'Please enter a valid email address.');
+      return;
+    }
+
+    if (password.isEmpty) {
+      _showWarning(isArabic ? 'يرجى إدخال كلمة المرور.' : 'Please enter a password.');
+      return;
+    }
+    if (password.length < 6) {
+      _showWarning(isArabic ? 'كلمة المرور يجب ألا تقل عن 6 خانات.' : 'Password must be at least 6 characters.');
+      return;
+    }
+
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.error,
-          content: Row(
-            children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  l10n.isArabic
-                      ? 'كلمتا المرور غير متطابقتين'
-                      : 'Passwords do not match',
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      _showWarning(isArabic ? 'كلمتا المرور غير متطابقتين.' : 'Passwords do not match.');
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       await widget.authService.signUp(
-        email: _emailController.text.trim(),
+        email: email,
         password: password.trim(),
-        username: _usernameController.text.trim(),
-        fullName: _nameController.text.trim(),
+        username: username,
+        fullName: name,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -79,7 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    l10n.isArabic
+                    isArabic
                         ? 'تم إنشاء الحساب بنجاح!'
                         : 'Registration successful! Check email if required.',
                   ),
@@ -90,24 +121,96 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         context.pop();
       }
+    } on SocketException catch (_) {
+      _showError(isArabic
+          ? 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.'
+          : 'Network error. Please check your internet connection.');
+    } on TimeoutException catch (_) {
+      _showError(isArabic
+          ? 'انتهت مهلة الاتصال بالخادم. يرجى المحاولة مرة أخرى.'
+          : 'Connection timed out. Please try again.');
+    } on AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      final code = e.statusCode ?? '';
+      if (code == '429' || msg.contains('rate limit') || msg.contains('over_email_send_rate_limit')) {
+        _showWarning(isArabic
+            ? 'تم تجاوز حد إرسال الرسائل المؤقت. يرجى الانتظار قليلاً ثم المحاولة.'
+            : 'Too many requests. Please wait a moment before trying again.');
+      } else if (msg.contains('username') || msg.contains('profiles_username_key')) {
+        _showError(isArabic
+            ? 'اسم المستخدم محجوز بالفعل. يرجى اختيار اسم آخر.'
+            : 'Username is already taken. Please choose another.');
+      } else if (msg.contains('already registered') || msg.contains('already exists') || msg.contains('duplicate')) {
+        _showError(isArabic
+            ? 'البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول أو استعادة كلمة المرور.'
+            : 'Email is already registered. Please login or reset password.');
+      } else if (code == '422' || msg.contains('invalid') || msg.contains('validation')) {
+        _showError(isArabic
+            ? 'بيانات التسجيل غير صالحة. يرجى مراجعة البريد وكلمة المرور.'
+            : 'Invalid registration details. Please verify your email and password.');
+      } else {
+        _showError(isArabic
+            ? 'تعذر إتمام التسجيل: ${e.message}'
+            : 'Registration failed: ${e.message}');
+      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.error,
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text('${l10n.error}: ${e.toString()}')),
-              ],
-            ),
-          ),
-        );
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('socket') || errStr.contains('network') || errStr.contains('connection') || errStr.contains('clientexception')) {
+        _showError(isArabic
+            ? 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.'
+            : 'Network error. Please check your internet connection.');
+      } else if (errStr.contains('username') && (errStr.contains('taken') || errStr.contains('unique') || errStr.contains('duplicate'))) {
+        _showError(isArabic
+            ? 'اسم المستخدم محجوز بالفعل. يرجى اختيار اسم آخر.'
+            : 'Username is already taken. Please choose another.');
+      } else if (errStr.contains('429') || errStr.contains('rate limit')) {
+        _showWarning(isArabic
+            ? 'تم تجاوز حد الطلبات المؤقت. يرجى الانتظار قليلاً ثم المحاولة.'
+            : 'Too many requests. Please wait a moment before trying again.');
+      } else {
+        _showError(isArabic
+            ? 'حدث خطأ غير متوقع أثناء إنشاء الحساب. يرجى المحاولة لاحقاً.'
+            : 'An unexpected error occurred during registration. Please try again later.');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showWarning(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.warning,
+          content: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
+        ),
+      );
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.error,
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
+        ),
+      );
   }
 
   @override

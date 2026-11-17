@@ -28,7 +28,8 @@ class PlantService {
     }
 
     if (search != null && search.trim().isNotEmpty) {
-      query = query.ilike('name', '%${search.trim()}%');
+      final s = search.trim();
+      query = query.or('name.ilike.%$s%,location.ilike.%$s%');
     }
 
     final response = await query.order('created_at', ascending: false);

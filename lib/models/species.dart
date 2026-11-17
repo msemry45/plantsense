@@ -80,5 +80,83 @@ class Species {
       'updated_at': updatedAt.toIso8601String(),
     };
   }
+
+  /// Returns localized common name based on active language
+  String localizedName(bool isArabic) {
+    if (!isArabic) return commonName;
+    switch (commonName.toLowerCase().trim()) {
+      case 'tomato':
+        return 'طماطم (Tomato)';
+      case 'sweet basil':
+      case 'basil':
+        return 'ريحان (Sweet Basil)';
+      case 'spearmint':
+      case 'mint':
+        return 'نعناع (Spearmint)';
+      case 'butterhead lettuce':
+      case 'lettuce':
+        return 'خس (Butterhead Lettuce)';
+      case 'bell pepper':
+      case 'pepper':
+        return 'فلفل حلو (Bell Pepper)';
+      case 'garden strawberry':
+      case 'strawberry':
+        return 'فراولة (Garden Strawberry)';
+      default:
+        return commonName;
+    }
+  }
+
+  /// Returns localized description based on active language
+  String? localizedDescription(bool isArabic) {
+    if (!isArabic) return description;
+    switch (commonName.toLowerCase().trim()) {
+      case 'tomato':
+        return 'محصول خضري ثمري عالي الإنتاجية، يلائم الزراعة الرأسية والبيوت المحمية، ويتميز بنموه الرأسي وثماره الغنية بالعناصر الغذائية.';
+      case 'sweet basil':
+      case 'basil':
+        return 'نبات عشبي عطري ينمو بكفاءة عالية في الأنظمة الرأسية والمائية، ذو أوراق خضراء عطرية غنية بالزيوت الطيارة المفيدة.';
+      case 'spearmint':
+      case 'mint':
+        return 'عشب معمر سريع النمو ومنعش، مثالي للأبراج والطبقات الرأسية، ويتميز بتجدد نموه السريع وقدرته العالية على التكيف.';
+      case 'butterhead lettuce':
+      case 'lettuce':
+        return 'محصول ورقي سريع النضج ومثالي للطبقات الرأسية والزراعة المائية، يمتاز بأوراق طرية غنية بالألياف والمعادن.';
+      case 'bell pepper':
+      case 'pepper':
+        return 'محصول ثمري مفضل للزراعة المحمية، ينتج ثماراً غنية بفيتامين C ويتطلب دعامات تثبيت رأسية جيدة.';
+      case 'garden strawberry':
+      case 'strawberry':
+        return 'محصول ثمري مميز للأبراج الرأسية والمزاريب المعلقة، يوفر استغلالاً مثالياً للمساحة وحصاداً نظيفاً.';
+      default:
+        return description;
+    }
+  }
+
+  /// Returns localized care guidelines based on active language
+  String? localizedCareInstructions(bool isArabic) {
+    if (!isArabic) return careInstructions;
+    switch (commonName.toLowerCase().trim()) {
+      case 'tomato':
+        return 'الري المنتظم عند قاعدة النبات لتجنب بلل الأوراق، وضمان تهوية جيدة، واستخدام دعامات رأسية لحمل الثمار وتسميد غني بالبوتاسيوم والفوسفور.';
+      case 'sweet basil':
+      case 'basil':
+        return 'الحفاظ على رطوبة التربة باعتدال وتصريف جيد، وتوفير إضاءة كافية، وتقليم القمم النامية دورياً لتحفيز التفرع الجانبي والكثافة الورقية.';
+      case 'spearmint':
+      case 'mint':
+        return 'تربة رطبة دائماً، وحصاد دوري للأطراف العلوية لتشجيع نمو أوراق طرية جديدة ومنع الإزهار المبكر.';
+      case 'butterhead lettuce':
+      case 'lettuce':
+        return 'الحفاظ على برودة منطقة الجذور ودرجة رطوبة منتظمة ومستقرة لتفادي الاستطالة والتزهير المبكر وحروق حواف الأوراق.';
+      case 'bell pepper':
+      case 'pepper':
+        return 'ري عميق منتظم، وتوفير إضاءة وافرة، وزيادة التسميد الفوسفوري أثناء عقد الأزهار، واستخدام دعامات تثبيت قوية.';
+      case 'garden strawberry':
+      case 'strawberry':
+        return 'ري بالتنقيط للحفاظ على الثمار جافة ونظيفة، وضمان تصريف ممتاز، وإزالة المدادات الزائدة لتركيز الطاقة على الإنتاج الثمري.';
+      default:
+        return careInstructions;
+    }
+  }
 }
 

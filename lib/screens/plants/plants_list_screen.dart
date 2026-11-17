@@ -364,7 +364,7 @@ class _PlantsListScreenState extends State<PlantsListScreen> {
                     // Species Chip
                     if (plant.species != null)
                       Text(
-                        plant.species!.commonName,
+                        plant.species!.localizedName(l10n.isArabic),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,

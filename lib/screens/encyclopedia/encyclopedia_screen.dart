@@ -107,7 +107,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          species.commonName,
+                          species.localizedName(isArabic),
                           style: const TextStyle(
                             fontFamily: AppTheme.fontFamily,
                             fontSize: 20,
@@ -133,9 +133,10 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              if (species.description != null && species.description!.isNotEmpty) ...[
+              if (species.localizedDescription(isArabic) != null &&
+                  species.localizedDescription(isArabic)!.isNotEmpty) ...[
                 Text(
-                  species.description!,
+                  species.localizedDescription(isArabic)!,
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.5,
@@ -183,7 +184,8 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                   ],
                 ),
               ),
-              if (species.careInstructions != null && species.careInstructions!.isNotEmpty) ...[
+              if (species.localizedCareInstructions(isArabic) != null &&
+                  species.localizedCareInstructions(isArabic)!.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 Text(
                   l10n.careGuidelines,
@@ -202,7 +204,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    species.careInstructions!,
+                    species.localizedCareInstructions(isArabic)!,
                     style: const TextStyle(
                       fontSize: 13,
                       height: 1.5,
@@ -349,7 +351,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                                     child: Icon(Icons.spa_rounded, color: AppColors.primary, size: 28),
                                   ),
                                   title: Text(
-                                    sp.commonName,
+                                    sp.localizedName(l10n.isArabic),
                                     style: const TextStyle(
                                       fontFamily: AppTheme.fontFamily,
                                       fontWeight: FontWeight.w700,

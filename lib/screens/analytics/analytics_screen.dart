@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/plant.dart';
 import '../../services/analytics_service.dart';
+import '../../services/locale_service.dart';
 import '../../services/plant_service.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
@@ -53,6 +54,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Future<void> _loadData() async {
+    final isArabic = LocaleService.isArabic;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -63,6 +65,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       final summaries = await _analyticsService.getAnalyticsSummary(
         plantId: _selectedPlantId,
         daysRange: _selectedDays,
+        isArabic: isArabic,
       );
 
       if (mounted) {
@@ -269,9 +272,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ? _summaries.fold<double>(0, (sum, i) => sum + i.careCompletionRate) / _summaries.length
         : 0.0;
     final totalHealthy = _summaries.fold<int>(0, (sum, i) => sum + i.healthyCount);
-    final healthRatio = totalInspections > 0
-        ? (totalHealthy / totalInspections) * 100.0
-        : 100.0;
+    final String healthDisplayValue;
+    if (totalInspections == 0) {
+      healthDisplayValue = isArabic ? 'لا توجد فحوصات' : 'No inspections';
+    } else {
+      final ratio = (totalHealthy / totalInspections) * 100.0;
+      healthDisplayValue = '${ratio.toStringAsFixed(0)}%';
+    }
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
@@ -390,7 +397,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           Expanded(
                             child: _buildKpiCard(
                               Icons.favorite_outline_rounded,
-                              '${healthRatio.toStringAsFixed(0)}%',
+                              healthDisplayValue,
                               l10n.healthRatio,
                               const Color(0xFF2E7D32),
                             ),
@@ -630,7 +637,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Widget _buildKpiCard(IconData icon, String value, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -642,8 +649,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 6),
           Text(
             value,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: value.length > 5 ? 12 : 18,
               fontWeight: FontWeight.w800,
               color: color,
             ),

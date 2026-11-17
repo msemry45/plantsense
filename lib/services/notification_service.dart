@@ -77,12 +77,38 @@ class NotificationService {
     final enabled = await isDiagnosisAlertsEnabled();
     if (!enabled) return null;
 
+    final String severityLabel;
+    if (isArabic) {
+      switch (severity.toLowerCase().trim()) {
+        case 'none':
+          severityLabel = 'منعدم';
+          break;
+        case 'low':
+          severityLabel = 'منخفض';
+          break;
+        case 'medium':
+          severityLabel = 'متوسط';
+          break;
+        case 'high':
+          severityLabel = 'مرتفع';
+          break;
+        case 'critical':
+        case 'severe':
+          severityLabel = 'حرج';
+          break;
+        default:
+          severityLabel = severity;
+      }
+    } else {
+      severityLabel = severity;
+    }
+
     final title = isArabic
         ? 'تنبيه صحة النبات: $plantName'
         : 'Plant Health Alert: $plantName';
     final body = isArabic
-        ? 'أظهر فحص الأوراق علامات بحاجة لاهتمام (مستوى الشدة: $severity). راجع التوصيات.'
-        : 'Leaf analysis detected signs needing attention (Severity: $severity). Check recommendations.';
+        ? 'أظهر فحص الأوراق علامات بحاجة لاهتمام (مستوى الشدة: $severityLabel). راجع التوصيات.'
+        : 'Leaf analysis detected signs needing attention (Severity: $severityLabel). Check recommendations.';
 
     final row = await _client.from('notifications').insert({
       'user_id': user.id,
@@ -116,8 +142,12 @@ class NotificationService {
         ? (isOverdue ? 'مهمة متأخرة: $taskTitle' : 'تذكير موعد عناية: $taskTitle')
         : (isOverdue ? 'Overdue Task: $taskTitle' : 'Care Task Reminder: $taskTitle');
     final body = isArabic
-        ? 'حان موعد تنفيذ مهمة العناية للنبتة "$plantName".'
-        : 'Care task for plant "$plantName" is due.';
+        ? (isOverdue
+            ? 'مهمة عناية متأخرة للنبتة "$plantName": حان موعد "$taskTitle" ولم تسجل كمكتملة بعد.'
+            : 'حان موعد تنفيذ مهمة العناية "$taskTitle" للنبتة "$plantName".')
+        : (isOverdue
+            ? 'Care task "$taskTitle" for plant "$plantName" is overdue.'
+            : 'Care task "$taskTitle" for plant "$plantName" is due.');
 
     final row = await _client.from('notifications').insert({
       'user_id': user.id,

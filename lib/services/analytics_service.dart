@@ -51,6 +51,7 @@ class AnalyticsService {
     String? plantId,
     String? speciesId,
     int? daysRange,
+    bool isArabic = true,
   }) async {
     final user = _client.auth.currentUser;
     if (user == null) return [];
@@ -122,7 +123,9 @@ class AnalyticsService {
       summaries.add(PlantAnalyticsSummary(
         plantId: plant.id,
         plantName: plant.name,
-        speciesName: plant.species?.commonName,
+        speciesName: plant.species != null
+            ? (isArabic ? plant.species!.localizedName(true) : plant.species!.commonName)
+            : null,
         ageDays: ageDays < 0 ? 0 : ageDays,
         totalInspections: plantDiags.length,
         healthyCount: healthy,
@@ -170,7 +173,9 @@ class AnalyticsService {
         item.totalTasks.toString(),
         item.completedTasks.toString(),
         lastDate,
-        _escapeCsv(item.lastStatus ?? '-'),
+        _escapeCsv(item.totalInspections == 0
+            ? (isArabic ? 'لا توجد فحوصات' : 'No inspections')
+            : (item.lastStatus ?? '-')),
       ];
 
       buffer.writeln(row.join(','));
@@ -220,7 +225,10 @@ class AnalyticsService {
         ? items.fold<double>(0, (sum, i) => sum + i.careCompletionRate) / items.length
         : 0.0;
 
-    String localizeStatus(String? status) {
+    String localizeStatus(String? status, int inspections) {
+      if (inspections == 0) {
+        return isArabic ? 'لا توجد فحوصات' : 'No inspections';
+      }
       if (status == null || status.isEmpty || status == '-') return '-';
       if (!isArabic) return status;
       switch (status) {
@@ -358,7 +366,7 @@ class AnalyticsService {
                   '${i.healthyCount}',
                   '${i.attentionCount}',
                   '${i.careCompletionRate.toStringAsFixed(0)}%',
-                  localizeStatus(i.lastStatus),
+                  localizeStatus(i.lastStatus, i.totalInspections),
                 ];
               }).toList(),
               columnWidths: {

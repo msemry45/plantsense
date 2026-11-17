@@ -45,10 +45,17 @@ Future<void> main() async {
   runApp(SVPGApp(authService: authService));
 }
 
-class SVPGApp extends StatelessWidget {
+class SVPGApp extends StatefulWidget {
   final AuthService authService;
 
   const SVPGApp({super.key, required this.authService});
+
+  @override
+  State<SVPGApp> createState() => _SVPGAppState();
+}
+
+class _SVPGAppState extends State<SVPGApp> {
+  late final _router = createRouter(widget.authService);
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +77,7 @@ class SVPGApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          routerConfig: createRouter(authService),
+          routerConfig: _router,
         );
       },
     );

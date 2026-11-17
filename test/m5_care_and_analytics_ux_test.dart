@@ -8,6 +8,7 @@ import 'package:plantsense/services/plant_service.dart';
 import 'package:plantsense/screens/plants/care_tasks_screen.dart';
 import 'package:plantsense/services/analytics_service.dart';
 import 'package:plantsense/services/care_task_service.dart';
+import 'package:plantsense/services/locale_service.dart';
 import 'package:plantsense/l10n/app_localizations.dart';
 
 class FakeCareTaskService extends CareTaskService {
@@ -248,8 +249,19 @@ void main() {
       expect(find.text('يرجى إدخال عنوان المهمة'), findsOneWidget);
       expect(fakeService.createCallCount, 0);
 
+      // Verify recurring toggle defaults to OFF (false)
+      final switchFinder = find.byType(SwitchListTile);
+      expect(switchFinder, findsOneWidget);
+      expect(tester.widget<SwitchListTile>(switchFinder).value, isFalse);
+
       // Enter title
       await tester.enterText(find.widgetWithText(TextFormField, 'عنوان المهمة *'), 'تقليم الأوراق');
+
+      // Toggle recurring to ON
+      await tester.tap(switchFinder);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(switchFinder).value, isTrue);
+
       // Enter invalid repeat days (-2)
       await tester.enterText(find.widgetWithText(TextFormField, 'التكرار كل (أيام) *'), '-2');
 
@@ -414,6 +426,106 @@ void main() {
       expect(find.text('45 يوم'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('AnalyticsScreen displays "لا توجد فحوصات" when inspections are 0', (tester) async {
+      LocaleService.localeNotifier.value = const Locale('ar');
+      const zeroInspectionsSummary = PlantAnalyticsSummary(
+        plantId: 'plant-1',
+        plantName: 'طماطم شيري',
+        ageDays: 10,
+        totalInspections: 0,
+        healthyCount: 0,
+        attentionCount: 0,
+        uncertainCount: 0,
+        careCompletionRate: 80.0,
+        totalTasks: 5,
+        completedTasks: 4,
+      );
+
+      final fakeAnalyticsZero = FakeAnalyticsService(summaries: [zeroInspectionsSummary]);
+      final fakePlants = FakePlantService();
+
+      await tester.pumpWidget(MaterialApp(
+        locale: const Locale('ar'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('ar'), Locale('en')],
+        home: AnalyticsScreen(
+          analyticsService: fakeAnalyticsZero,
+          plantService: fakePlants,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Must display "لا توجد فحوصات" in KPI card instead of "100%"
+      expect(find.text('لا توجد فحوصات'), findsOneWidget);
+      expect(find.text('100%'), findsNothing);
+    });
+
+    testWidgets('AnalyticsScreen displays "0%" when inspections exist but none are healthy', (tester) async {
+      LocaleService.localeNotifier.value = const Locale('ar');
+      const zeroHealthySummary = PlantAnalyticsSummary(
+        plantId: 'plant-2',
+        plantName: 'ريحان مجهد',
+        ageDays: 15,
+        totalInspections: 4,
+        healthyCount: 0,
+        attentionCount: 4,
+        uncertainCount: 0,
+        careCompletionRate: 50.0,
+        totalTasks: 4,
+        completedTasks: 2,
+      );
+
+      final fakeAnalyticsUnhealthy = FakeAnalyticsService(summaries: [zeroHealthySummary]);
+      final fakePlants = FakePlantService();
+
+      await tester.pumpWidget(MaterialApp(
+        locale: const Locale('ar'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('ar'), Locale('en')],
+        home: AnalyticsScreen(
+          analyticsService: fakeAnalyticsUnhealthy,
+          plantService: fakePlants,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('0%'), findsOneWidget);
+      expect(find.text('لا توجد فحوصات'), findsNothing);
+    });
+
+    test('AnalyticsService exportToCsv outputs "لا توجد فحوصات" when plant has 0 inspections', () {
+      const summary = PlantAnalyticsSummary(
+        plantId: 'plant-zero',
+        plantName: 'نبتة جديدة بدون فحص',
+        speciesName: 'طماطم',
+        ageDays: 5,
+        totalInspections: 0,
+        healthyCount: 0,
+        attentionCount: 0,
+        uncertainCount: 0,
+        careCompletionRate: 0.0,
+        totalTasks: 0,
+        completedTasks: 0,
+      );
+
+      final service = AnalyticsService();
+      final csvArabic = service.exportToCsv([summary], isArabic: true);
+      expect(csvArabic.contains('لا توجد فحوصات'), isTrue);
+
+      final csvEnglish = service.exportToCsv([summary], isArabic: false);
+      expect(csvEnglish.contains('No inspections'), isTrue);
+    });
   });
 }
 
@@ -427,7 +539,12 @@ class FakeAnalyticsService extends Fake implements AnalyticsService {
   FakeAnalyticsService({required this.summaries});
 
   @override
-  Future<List<PlantAnalyticsSummary>> getAnalyticsSummary({String? plantId, String? speciesId, int? daysRange}) async {
+  Future<List<PlantAnalyticsSummary>> getAnalyticsSummary({
+    String? plantId,
+    String? speciesId,
+    int? daysRange,
+    bool isArabic = true,
+  }) async {
     return summaries;
   }
 }

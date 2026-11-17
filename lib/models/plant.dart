@@ -36,6 +36,12 @@ class Plant {
     return difference >= 0 ? difference : 0;
   }
 
+  /// Returns localized species common name if species is associated
+  String? localizedSpeciesName(bool isArabic) {
+    if (species == null) return null;
+    return species!.localizedName(isArabic);
+  }
+
   factory Plant.fromJson(Map<String, dynamic> json) {
     Species? parsedSpecies;
     if (json['species'] != null && json['species'] is Map<String, dynamic>) {
