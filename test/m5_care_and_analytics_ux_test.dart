@@ -29,14 +29,44 @@ class FakeCareTaskService extends CareTaskService {
   Future<CareTask> completeCareTask(CareTask task) async {
     completeCallCount++;
     final idx = tasks.indexWhere((t) => t.id == task.id);
+    CareTask completedTask = task.copyWith(
+      status: 'completed',
+      completedAt: DateTime.now(),
+    );
     if (idx != -1) {
-      tasks[idx] = task.copyWith(
-        status: 'completed',
-        completedAt: DateTime.now(),
-      );
-      return tasks[idx];
+      tasks[idx] = completedTask;
     }
-    return task;
+
+    if (task.repeatEveryDays != null && task.repeatEveryDays! > 0) {
+      final originId = (task.parentTaskId != null && task.parentTaskId!.isNotEmpty)
+          ? task.parentTaskId!
+          : task.id;
+
+      final alreadyPending = tasks.any((t) =>
+          t.plantId == task.plantId &&
+          t.status == 'pending' &&
+          (t.parentTaskId == originId || t.parentTaskId == task.id));
+
+      if (!alreadyPending) {
+        final nextTask = CareTask(
+          id: 'task-next-${tasks.length + 1}',
+          plantId: task.plantId,
+          createdBy: task.createdBy,
+          title: task.title,
+          description: task.description,
+          taskType: task.taskType,
+          dueAt: DateTime.now().add(Duration(days: task.repeatEveryDays!)),
+          repeatEveryDays: task.repeatEveryDays,
+          status: 'pending',
+          parentTaskId: originId,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        tasks.add(nextTask);
+      }
+    }
+
+    return idx != -1 ? tasks[idx] : completedTask;
   }
 
   @override
@@ -47,6 +77,7 @@ class FakeCareTaskService extends CareTaskService {
     String taskType = 'other',
     DateTime? dueAt,
     int? repeatEveryDays,
+    String? parentTaskId,
   }) async {
     createCallCount++;
     lastCreatedPayload = {
@@ -56,6 +87,7 @@ class FakeCareTaskService extends CareTaskService {
       'taskType': taskType,
       'dueAt': dueAt,
       'repeatEveryDays': repeatEveryDays,
+      'parentTaskId': parentTaskId,
     };
     final newTask = CareTask(
       id: 'task-new-${tasks.length + 1}',
@@ -67,6 +99,7 @@ class FakeCareTaskService extends CareTaskService {
       dueAt: dueAt,
       repeatEveryDays: repeatEveryDays,
       status: 'pending',
+      parentTaskId: parentTaskId,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

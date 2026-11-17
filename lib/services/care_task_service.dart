@@ -27,6 +27,7 @@ class CareTaskService {
     String taskType = 'other',
     DateTime? dueAt,
     int? repeatEveryDays,
+    String? parentTaskId,
   }) async {
     final user = _client.auth.currentUser;
     final normalizedType = ['watering', 'fertilizing', 'pruning', 'inspection', 'other']
@@ -34,18 +35,23 @@ class CareTaskService {
         ? taskType
         : 'other';
 
+    final payload = <String, dynamic>{
+      'plant_id': plantId,
+      'created_by': user?.id,
+      'title': title,
+      'description': description,
+      'task_type': normalizedType,
+      'due_at': (dueAt ?? DateTime.now()).toIso8601String(),
+      'repeat_every_days': repeatEveryDays,
+      'status': 'pending',
+    };
+    if (parentTaskId != null && parentTaskId.isNotEmpty) {
+      payload['parent_task_id'] = parentTaskId;
+    }
+
     final row = await _client
         .from('care_tasks')
-        .insert({
-          'plant_id': plantId,
-          'created_by': user?.id,
-          'title': title,
-          'description': description,
-          'task_type': normalizedType,
-          'due_at': (dueAt ?? DateTime.now()).toIso8601String(),
-          'repeat_every_days': repeatEveryDays,
-          'status': 'pending',
-        })
+        .insert(payload)
         .select()
         .single();
 
@@ -113,14 +119,22 @@ class CareTaskService {
           ? task.taskType
           : 'other';
 
-      // Verify no pending occurrence of the same recurring task already exists
+      // Identify the original/root task ID to maintain lineage across recurring cycles
+      final originId = (task.parentTaskId != null && task.parentTaskId!.isNotEmpty)
+          ? task.parentTaskId!
+          : task.id;
+
+      // Verify no pending occurrence linked to this original task already exists.
+      // Checks both parent_task_id matching the origin task ID or the completing task ID.
+      // This strictly decouples from title-matching so multiple tasks with identical titles
+      // maintain independent schedules, and repeated complete calls produce exactly one task.
       final existingFuture = await _client
           .from('care_tasks')
           .select('id')
           .eq('plant_id', task.plantId)
-          .eq('title', task.title)
           .eq('status', 'pending')
-          .gte('due_at', now.toIso8601String())
+          .or('parent_task_id.eq.$originId,parent_task_id.eq.${task.id}')
+          .limit(1)
           .maybeSingle();
 
       if (existingFuture == null) {
@@ -133,6 +147,7 @@ class CareTaskService {
           'due_at': nextDue.toIso8601String(),
           'repeat_every_days': task.repeatEveryDays,
           'status': 'pending',
+          'parent_task_id': originId,
         });
       }
     }

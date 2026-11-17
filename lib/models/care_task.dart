@@ -11,6 +11,7 @@ class CareTask {
   final String status; // pending, completed, cancelled
   final DateTime? completedAt;
   final String? completedBy;
+  final String? parentTaskId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -26,6 +27,7 @@ class CareTask {
     this.status = 'pending',
     this.completedAt,
     this.completedBy,
+    this.parentTaskId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -60,10 +62,13 @@ class CareTask {
     return match?.group(1)?.trim();
   }
 
-  /// Returns user notes without the leading `[نوع: ...]` tag
+  /// Returns user notes without technical tags like `[نوع: ...]` or `[origin: ...]`
   String get cleanDescription {
     if (description == null) return '';
-    return description!.replaceFirst(RegExp(r'^\[(?:نوع|type):\s*[^\]]+\]\s*'), '').trim();
+    var text = description!;
+    text = text.replaceFirst(RegExp(r'^\[(?:نوع|type):\s*[^\]]+\]\s*'), '');
+    text = text.replaceAll(RegExp(r'\[(?:origin|اصل|أصل):\s*[^\]]+\]\s*'), '');
+    return text.trim();
   }
 
   /// Display string for task type, respecting custom type name if specified
@@ -77,6 +82,15 @@ class CareTask {
   }
 
   factory CareTask.fromJson(Map<String, dynamic> json) {
+    String? parentTaskId = json['parent_task_id'] as String?;
+    if (parentTaskId == null && json['description'] != null) {
+      final originMatch = RegExp(r'\[(?:origin|اصل|أصل):\s*([^\]]+)\]')
+          .firstMatch(json['description'] as String);
+      if (originMatch != null) {
+        parentTaskId = originMatch.group(1)?.trim();
+      }
+    }
+
     return CareTask(
       id: json['id'] as String,
       plantId: json['plant_id'] as String,
@@ -89,6 +103,7 @@ class CareTask {
       status: (json['status'] ?? 'pending') as String,
       completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at'] as String) : null,
       completedBy: json['completed_by'] as String?,
+      parentTaskId: parentTaskId,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -111,6 +126,7 @@ class CareTask {
       'status': status,
       'completed_at': completedAt?.toIso8601String(),
       'completed_by': completedBy,
+      'parent_task_id': parentTaskId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -128,6 +144,7 @@ class CareTask {
     String? status,
     DateTime? completedAt,
     String? completedBy,
+    String? parentTaskId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -143,6 +160,7 @@ class CareTask {
       status: status ?? this.status,
       completedAt: completedAt ?? this.completedAt,
       completedBy: completedBy ?? this.completedBy,
+      parentTaskId: parentTaskId ?? this.parentTaskId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
