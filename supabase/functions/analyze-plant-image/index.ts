@@ -408,17 +408,30 @@ ${speciesInfo}
 
     // Call Gemini with model fallback and safe timeout
     const candidateModels = [
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-1.5-flash-8b",
       "gemini-3.5-flash-lite",
       "gemini-3.1-flash-lite",
-      "gemini-flash-lite-latest",
       "gemini-3.8-flash",
+      "gemini-flash-lite-latest",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
     ];
-    const effectiveGeminiKey = GEMINI_API_KEY;
+    let effectiveGeminiKey = Deno.env.get("GEMINI_API_KEY") || GEMINI_API_KEY;
     if (!effectiveGeminiKey) {
-      console.error("GEMINI_API_KEY secret is missing in Edge Function environment.");
+      try {
+        const { data: secretRow } = await adminClient
+          .from("app_secrets")
+          .select("value")
+          .eq("name", "GEMINI_API_KEY")
+          .maybeSingle();
+        if (secretRow?.value) {
+          effectiveGeminiKey = secretRow.value.trim();
+        }
+      } catch (secErr) {
+        console.error("Error fetching secret from app_secrets table:", secErr);
+      }
+    }
+    if (!effectiveGeminiKey) {
+      console.error("GEMINI_API_KEY secret is missing in Edge Function environment and app_secrets.");
       return new Response(
         JSON.stringify({
           error: language === "ar"
