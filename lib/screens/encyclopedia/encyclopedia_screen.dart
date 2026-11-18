@@ -41,14 +41,17 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
     super.dispose();
   }
 
-  Future<void> _loadPublishedSpecies({String? query}) async {
+  Future<void> _loadPublishedSpecies({String? query, bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final list = await _speciesService.getPublishedSpecies(search: query);
+      final list = await _speciesService.getPublishedSpecies(
+        search: query,
+        forceRefresh: forceRefresh,
+      );
       if (mounted) {
         setState(() {
           _speciesList = list;
@@ -430,88 +433,96 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                               ],
                             ),
                           )
-                        : ListView.separated(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _speciesList.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (ctx, idx) {
-                              final sp = _speciesList[idx];
-                              return Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  side: BorderSide(
-                                    color: AppColors.lightGreen.withAlpha(120),
-                                  ),
-                                ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.all(16),
-                                  leading: CircleAvatar(
-                                    radius: 26,
-                                    backgroundColor: AppColors.lightGreen,
-                                    child: ClipOval(
-                                      child: sp.imagePath != null && sp.imagePath!.startsWith('http')
-                                          ? Image.network(
-                                              sp.imagePath!,
-                                              width: 52,
-                                              height: 52,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) => const Icon(
-                                                Icons.spa_rounded,
-                                                color: AppColors.primary,
-                                                size: 28,
-                                              ),
-                                            )
-                                          : const Icon(Icons.spa_rounded, color: AppColors.primary, size: 28),
+                        : RefreshIndicator(
+                            color: AppColors.primary,
+                            onRefresh: () => _loadPublishedSpecies(
+                              query: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
+                              forceRefresh: true,
+                            ),
+                            child: ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _speciesList.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              itemBuilder: (ctx, idx) {
+                                final sp = _speciesList[idx];
+                                return Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(
+                                      color: AppColors.lightGreen.withAlpha(120),
                                     ),
                                   ),
-                                  title: Text(
-                                    sp.localizedName(l10n.isArabic),
-                                    style: const TextStyle(
-                                      fontFamily: AppTheme.fontFamily,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                      color: AppColors.dark,
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(16),
+                                    leading: CircleAvatar(
+                                      radius: 26,
+                                      backgroundColor: AppColors.lightGreen,
+                                      child: ClipOval(
+                                        child: sp.imagePath != null && sp.imagePath!.startsWith('http')
+                                            ? Image.network(
+                                                sp.imagePath!,
+                                                width: 52,
+                                                height: 52,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => const Icon(
+                                                  Icons.spa_rounded,
+                                                  color: AppColors.primary,
+                                                  size: 28,
+                                                ),
+                                              )
+                                            : const Icon(Icons.spa_rounded, color: AppColors.primary, size: 28),
+                                      ),
                                     ),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      if (sp.scientificName != null) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          sp.scientificName!,
-                                          style: TextStyle(
-                                            fontStyle: FontStyle.italic,
-                                            fontSize: 12,
-                                            color: AppColors.dark.withOpacity(0.6),
-                                          ),
-                                        ),
-                                      ],
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.thermostat_outlined, size: 14, color: AppColors.primary),
-                                          const SizedBox(width: 4),
+                                    title: Text(
+                                      sp.localizedName(l10n.isArabic),
+                                      style: const TextStyle(
+                                        fontFamily: AppTheme.fontFamily,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                        color: AppColors.dark,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (sp.scientificName != null) ...[
+                                          const SizedBox(height: 2),
                                           Text(
-                                            '${sp.idealTemperatureMin ?? 18}° - ${sp.idealTemperatureMax ?? 28}°C',
-                                            style: const TextStyle(fontSize: 12),
-                                          ),
-                                          const SizedBox(width: 14),
-                                          const Icon(Icons.water_drop_outlined, size: 14, color: AppColors.primary),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${sp.idealHumidityMin ?? 50}% - ${sp.idealHumidityMax ?? 75}%',
-                                            style: const TextStyle(fontSize: 12),
+                                            sp.scientificName!,
+                                            style: TextStyle(
+                                              fontStyle: FontStyle.italic,
+                                              fontSize: 12,
+                                              color: AppColors.dark.withOpacity(0.6),
+                                            ),
                                           ),
                                         ],
-                                      ),
-                                    ],
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.thermostat_outlined, size: 14, color: AppColors.primary),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${sp.idealTemperatureMin ?? 18}° - ${sp.idealTemperatureMax ?? 28}°C',
+                                              style: const TextStyle(fontSize: 12),
+                                            ),
+                                            const SizedBox(width: 14),
+                                            const Icon(Icons.water_drop_outlined, size: 14, color: AppColors.primary),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${sp.idealHumidityMin ?? 50}% - ${sp.idealHumidityMax ?? 75}%',
+                                              style: const TextStyle(fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                                    onTap: () => _showSpeciesDetails(sp),
                                   ),
-                                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-                                  onTap: () => _showSpeciesDetails(sp),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
           ),
         ],

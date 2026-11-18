@@ -172,32 +172,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Center(
-                    child: SVPGLogo(height: 110),
+                    child: SVPGLogo(height: 165),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.appTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontFamily,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.dark,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.appSubtitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontFamily,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.dark.withOpacity(0.65),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),

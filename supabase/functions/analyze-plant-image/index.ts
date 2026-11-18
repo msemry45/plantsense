@@ -157,6 +157,42 @@ Deno.serve(async (req: Request) => {
     }
 
     // -----------------------------------------------------------
+    // ACTION: Delete User (Admin Only)
+    // -----------------------------------------------------------
+    if (body.action === "delete_user") {
+      const targetUserId = (body.user_id || "").toString().trim();
+      if (!targetUserId) {
+        return new Response(
+          JSON.stringify({ error: "user_id is required" }),
+          { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      if (profile.role !== "admin") {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: Admin role required to delete users" }),
+          { status: 403, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      if (targetUserId === user.id) {
+        return new Response(
+          JSON.stringify({ error: "Cannot delete your own admin account" }),
+          { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      // Delete from profiles
+      await adminClient.from("profiles").delete().eq("id", targetUserId);
+      // Delete from auth.users
+      const { error: delErr } = await adminClient.auth.admin.deleteUser(targetUserId);
+      if (delErr) {
+        console.warn("auth.admin.deleteUser warning:", delErr.message);
+      }
+      return new Response(
+        JSON.stringify({ message: "User deleted successfully", user_id: targetUserId }),
+        { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+
+    // -----------------------------------------------------------
     // ACTION: Custom Species Creation (Bypasses admin-only species RLS)
     // -----------------------------------------------------------
     if (body.action === "create_species" || body.action === "create_custom_species") {

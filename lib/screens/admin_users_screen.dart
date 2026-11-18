@@ -76,6 +76,77 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     }
   }
 
+  Future<void> _confirmDeleteUser(UserProfile user) async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.isArabic ? 'حذف المستخدم' : 'Delete User'),
+        content: Text(
+          l10n.isArabic
+              ? 'هل أنت متأكد من حذف المستخدم "${user.fullName ?? user.username}" نهائياً؟ سيتم حذف جميع بياناته المرتبطة.'
+              : 'Are you sure you want to permanently delete user "${user.fullName ?? user.username}"? All associated data will be removed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              l10n.isArabic ? 'حذف' : 'Delete',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteUser(user.id);
+    }
+  }
+
+  Future<void> _deleteUser(String id) async {
+    setState(() => _isLoading = true);
+    try {
+      try {
+        await _supabase.functions.invoke(
+          'analyze-plant-image',
+          body: {'action': 'delete_user', 'user_id': id},
+        );
+      } catch (_) {
+        await _supabase.from('profiles').delete().eq('id', id);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.primary,
+            content: Text(
+              context.l10n.isArabic
+                  ? 'تم حذف المستخدم بنجاح.'
+                  : 'User deleted successfully.',
+            ),
+          ),
+        );
+      }
+      await _fetchUsers();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.error,
+            content: Text('${context.l10n.isArabic ? "فشل حذف المستخدم" : "Failed to delete user"}: $e'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -156,6 +227,12 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                   ],
                                 ),
                               ),
+                              if (user.id != _supabase.auth.currentUser?.id)
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 22),
+                                  tooltip: l10n.isArabic ? 'حذف المستخدم' : 'Delete user',
+                                  onPressed: () => _confirmDeleteUser(user),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 12),

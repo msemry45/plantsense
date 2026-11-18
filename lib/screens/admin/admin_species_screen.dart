@@ -96,6 +96,267 @@ class _AdminSpeciesScreenState extends State<AdminSpeciesScreen> {
     }
   }
 
+  Future<void> _confirmDeleteSpecies(Species species) async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.isArabic ? 'حذف من الموسوعة' : 'Delete Species'),
+        content: Text(
+          l10n.isArabic
+              ? 'هل أنت متأكد من حذف نبتة "${species.commonName}" نهائياً من الموسوعة؟'
+              : 'Are you sure you want to permanently delete "${species.commonName}" from the encyclopedia?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              l10n.isArabic ? 'حذف' : 'Delete',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _speciesService.deleteSpecies(species.id);
+        if (mounted) {
+          setState(() {
+            _speciesList.removeWhere((s) => s.id == species.id);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.primary,
+              content: Text(
+                l10n.isArabic
+                    ? 'تم حذف النبتة من الموسوعة بنجاح.'
+                    : 'Species deleted successfully from encyclopedia.',
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.error,
+              content: Text(e.toString().replaceFirst('Exception: ', '')),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _showAddSpeciesDialog() {
+    final l10n = context.l10n;
+    final commonNameCtrl = TextEditingController();
+    final scientificCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final careCtrl = TextEditingController();
+    final sourceUrlCtrl = TextEditingController();
+    final imagePathCtrl = TextEditingController();
+    final tempMinCtrl = TextEditingController();
+    final tempMaxCtrl = TextEditingController();
+    final humMinCtrl = TextEditingController();
+    final humMaxCtrl = TextEditingController();
+    final lightCtrl = TextEditingController();
+    bool isPublished = true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(l10n.isArabic ? 'إضافة نبتة يدوياً للموسوعة' : 'Add Species to Encyclopedia'),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 480,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: commonNameCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.isArabic ? 'الاسم الشائع *' : 'Common Name *',
+                      hintText: l10n.isArabic ? 'مثال: نعناع بري' : 'e.g. Wild Mint',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: scientificCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.isArabic ? 'الاسم العلمي' : 'Scientific Name',
+                      hintText: 'e.g. Mentha arvensis',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: l10n.isArabic ? 'الملخص والوصف (ويكيبيديا)' : 'Description / Summary',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: careCtrl,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      labelText: l10n.careGuidelines,
+                      hintText: l10n.isArabic ? 'إرشادات الري والإضاءة' : 'Watering and lighting tips',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: sourceUrlCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.isArabic ? 'رابط ويكيبيديا' : 'Wikipedia URL',
+                      hintText: 'https://en.wikipedia.org/wiki/...',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: imagePathCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.isArabic ? 'رابط صورة النبتة (ويكيميديا)' : 'Image URL (Wikimedia)',
+                      hintText: 'https://upload.wikimedia.org/...',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: tempMinCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Min Temp °C'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: tempMaxCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Max Temp °C'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: humMinCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Min Hum %'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: humMaxCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Max Hum %'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: lightCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.isArabic ? 'ظروف الإضاءة' : 'Light Conditions',
+                      hintText: 'Full sun / Partial shade',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    title: Text(l10n.isArabic ? 'نشر فوري في الموسوعة' : 'Publish immediately'),
+                    value: isPublished,
+                    activeColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (val) => setDialogState(() => isPublished = val),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final name = commonNameCtrl.text.trim();
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: AppColors.error,
+                      content: Text(l10n.isArabic ? 'يرجى إدخال اسم النبتة' : 'Please enter species name'),
+                    ),
+                  );
+                  return;
+                }
+                Navigator.of(ctx).pop();
+                try {
+                  final newSpecies = await _speciesService.createSpecies(
+                    commonName: name,
+                    scientificName: scientificCtrl.text.trim().isEmpty ? null : scientificCtrl.text.trim(),
+                    description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+                    careInstructions: careCtrl.text.trim().isEmpty ? null : careCtrl.text.trim(),
+                    sourceUrl: sourceUrlCtrl.text.trim().isEmpty ? null : sourceUrlCtrl.text.trim(),
+                    imagePath: imagePathCtrl.text.trim().isEmpty ? null : imagePathCtrl.text.trim(),
+                    license: 'CC BY-SA 4.0',
+                    attribution: 'Wikimedia Commons / Wikipedia contributors',
+                    idealTemperatureMin: num.tryParse(tempMinCtrl.text),
+                    idealTemperatureMax: num.tryParse(tempMaxCtrl.text),
+                    idealHumidityMin: num.tryParse(humMinCtrl.text),
+                    idealHumidityMax: num.tryParse(humMaxCtrl.text),
+                    idealLightConditions: lightCtrl.text.trim().isEmpty ? null : lightCtrl.text.trim(),
+                    isPublished: isPublished,
+                  );
+                  if (mounted) {
+                    setState(() {
+                      _speciesList.insert(0, newSpecies);
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppColors.primary,
+                        content: Text(
+                          l10n.isArabic ? 'تمت إضافة النبتة للموسوعة بنجاح' : 'Species added successfully',
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppColors.error,
+                        content: Text(e.toString().replaceFirst('Exception: ', '')),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: Text(l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showEditSpeciesDialog(Species species) {
     final l10n = context.l10n;
     final commonNameCtrl = TextEditingController(text: species.commonName);
@@ -203,6 +464,13 @@ class _AdminSpeciesScreenState extends State<AdminSpeciesScreen> {
           LanguageToggleButton(),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: Text(l10n.isArabic ? 'إضافة نبتة يدوياً' : 'Add Species'),
+        onPressed: _showAddSpeciesDialog,
+      ),
       body: Column(
         children: [
           // Search & Filters
@@ -249,7 +517,7 @@ class _AdminSpeciesScreenState extends State<AdminSpeciesScreen> {
                         ),
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                         itemCount: _speciesList.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (ctx, idx) {
@@ -313,6 +581,11 @@ class _AdminSpeciesScreenState extends State<AdminSpeciesScreen> {
                                         icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
                                         tooltip: l10n.edit,
                                         onPressed: () => _showEditSpeciesDialog(sp),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+                                        tooltip: l10n.isArabic ? 'حذف من الموسوعة' : 'Delete',
+                                        onPressed: () => _confirmDeleteSpecies(sp),
                                       ),
                                     ],
                                   ),

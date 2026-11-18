@@ -1,28 +1,109 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/species.dart';
 
 class SpeciesService {
   final SupabaseClient? _clientInstance;
+  static const String _cacheKeySpecies = 'svpg_cached_encyclopedia_species_v2';
+  static const String _cacheKeyTimestamp = 'svpg_cached_encyclopedia_timestamp_v2';
 
   SpeciesService({SupabaseClient? client}) : _clientInstance = client;
 
   SupabaseClient get _client => _clientInstance ?? Supabase.instance.client;
 
-  /// Get published species for the public Encyclopedia (Guests and Farmers)
-  Future<List<Species>> getPublishedSpecies({String? search}) async {
-    var query = _client
-        .from('species')
-        .select()
-        .eq('is_published', true);
+  /// Get published species for the public Encyclopedia (Guests and Farmers) with local device caching
+  Future<List<Species>> getPublishedSpecies({String? search, bool forceRefresh = false}) async {
+    final isSearching = search != null && search.trim().isNotEmpty;
 
-    if (search != null && search.trim().isNotEmpty) {
-      query = query.ilike('common_name', '%${search.trim()}%');
+    // 1. If not searching and not forcing refresh, try to read from local device cache first
+    if (!isSearching && !forceRefresh) {
+      try {
+        final cachedList = await _loadFromCache();
+        if (cachedList != null && cachedList.isNotEmpty) {
+          // Trigger asynchronous background refresh without blocking user
+          _refreshCacheInBackground();
+          return cachedList;
+        }
+      } catch (_) {
+        // Cache read failure, proceed to remote fetch
+      }
     }
 
-    final response = await query.order('common_name', ascending: true);
-    return response
-        .map((row) => Species.fromJson(row))
-        .toList();
+    try {
+      var query = _client
+          .from('species')
+          .select()
+          .eq('is_published', true);
+
+      if (isSearching) {
+        query = query.ilike('common_name', '%${search.trim()}%');
+      }
+
+      final response = await query.order('common_name', ascending: true);
+      final list = response.map((row) => Species.fromJson(row)).toList();
+
+      // If full list (not search), save to local device cache
+      if (!isSearching && list.isNotEmpty) {
+        await _saveToCache(response);
+      }
+
+      return list;
+    } catch (e) {
+      // If network fails (e.g. offline or server error), fall back to cache
+      if (!isSearching) {
+        final fallback = await _loadFromCache();
+        if (fallback != null && fallback.isNotEmpty) {
+          return fallback;
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<Species>?> _loadFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_cacheKeySpecies);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final decoded = jsonDecode(cachedJson);
+        if (decoded is List) {
+          return decoded.map((e) => Species.fromJson(Map<String, dynamic>.from(e))).toList();
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> _saveToCache(dynamic data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKeySpecies, jsonEncode(data));
+      await prefs.setInt(_cacheKeyTimestamp, DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {}
+  }
+
+  Future<void> clearCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cacheKeySpecies);
+      await prefs.remove(_cacheKeyTimestamp);
+    } catch (_) {}
+  }
+
+  void _refreshCacheInBackground() {
+    Future.microtask(() async {
+      try {
+        final response = await _client
+            .from('species')
+            .select()
+            .eq('is_published', true)
+            .order('common_name', ascending: true);
+        if (response.isNotEmpty) {
+          await _saveToCache(response);
+        }
+      } catch (_) {}
+    });
   }
 
   /// Get species available for plant creation (published species + farmer's own custom species)
@@ -66,7 +147,6 @@ class SpeciesService {
 
     try {
       // 1. Attempt insertion via backend Edge Function with service-role permissions
-      // to permit farmers to define new agricultural species without being blocked by admin-only RLS.
       final response = await _client.functions.invoke(
         'analyze-plant-image',
         body: {
@@ -84,12 +164,11 @@ class SpeciesService {
       }
     } catch (e) {
       if (e is! UnimplementedError && !e.toString().contains('functions')) {
-        // If Edge Function responded with explicit logic or error, rethrow unless it's missing
         if (e is Exception && !e.toString().contains('NoSuchMethod')) rethrow;
       }
     }
 
-    // 2. Fallback to direct table insertion (e.g. for mock clients in unit tests or if user is admin)
+    // 2. Fallback to direct table insertion
     final row = await _client
         .from('species')
         .insert({
@@ -127,7 +206,62 @@ class SpeciesService {
         .select()
         .single();
 
+    await clearCache();
     return Species.fromJson(response);
+  }
+
+  /// Delete species from encyclopedia (Admin only)
+  Future<void> deleteSpecies(String speciesId) async {
+    await _client.from('species').delete().eq('id', speciesId);
+    await clearCache();
+  }
+
+  /// Create species manually (Admin only)
+  Future<Species> createSpecies({
+    required String commonName,
+    String? scientificName,
+    String? description,
+    String? careInstructions,
+    num? idealTemperatureMin,
+    num? idealTemperatureMax,
+    num? idealHumidityMin,
+    num? idealHumidityMax,
+    String? idealLightConditions,
+    String? imagePath,
+    String? sourceUrl,
+    String? license,
+    String? attribution,
+    bool isPublished = true,
+  }) async {
+    final insertData = <String, dynamic>{
+      'common_name': commonName.trim(),
+      'is_published': isPublished,
+      'created_by': _client.auth.currentUser?.id,
+      if (scientificName != null && scientificName.trim().isNotEmpty)
+        'scientific_name': scientificName.trim(),
+      if (description != null && description.trim().isNotEmpty)
+        'description': description.trim(),
+      if (careInstructions != null && careInstructions.trim().isNotEmpty)
+        'care_instructions': careInstructions.trim(),
+      if (idealTemperatureMin != null) 'ideal_temperature_min': idealTemperatureMin,
+      if (idealTemperatureMax != null) 'ideal_temperature_max': idealTemperatureMax,
+      if (idealHumidityMin != null) 'ideal_humidity_min': idealHumidityMin,
+      if (idealHumidityMax != null) 'ideal_humidity_max': idealHumidityMax,
+      if (idealLightConditions != null && idealLightConditions.trim().isNotEmpty)
+        'ideal_light_conditions': idealLightConditions.trim(),
+      if (imagePath != null && imagePath.trim().isNotEmpty)
+        'image_path': imagePath.trim(),
+      if (sourceUrl != null && sourceUrl.trim().isNotEmpty)
+        'source_url': sourceUrl.trim(),
+      if (license != null && license.trim().isNotEmpty)
+        'license': license.trim(),
+      if (attribution != null && attribution.trim().isNotEmpty)
+        'attribution': attribution.trim(),
+    };
+
+    final row = await _client.from('species').insert(insertData).select().single();
+    await clearCache();
+    return Species.fromJson(row);
   }
 
   /// Update species details (Admin only)
@@ -142,6 +276,10 @@ class SpeciesService {
     num? idealHumidityMin,
     num? idealHumidityMax,
     String? idealLightConditions,
+    String? imagePath,
+    String? sourceUrl,
+    String? license,
+    String? attribution,
     bool? isPublished,
   }) async {
     final updateData = <String, dynamic>{
@@ -155,6 +293,10 @@ class SpeciesService {
       if (idealHumidityMin != null) 'ideal_humidity_min': idealHumidityMin,
       if (idealHumidityMax != null) 'ideal_humidity_max': idealHumidityMax,
       if (idealLightConditions != null) 'ideal_light_conditions': idealLightConditions,
+      if (imagePath != null) 'image_path': imagePath.trim(),
+      if (sourceUrl != null) 'source_url': sourceUrl.trim(),
+      if (license != null) 'license': license.trim(),
+      if (attribution != null) 'attribution': attribution.trim(),
       if (isPublished != null) 'is_published': isPublished,
     };
 
@@ -165,6 +307,7 @@ class SpeciesService {
         .select()
         .single();
 
+    await clearCache();
     return Species.fromJson(response);
   }
 }

@@ -13,7 +13,7 @@ class _FakeSpeciesService extends SpeciesService {
   _FakeSpeciesService(this.speciesList);
 
   @override
-  Future<List<Species>> getPublishedSpecies({String? search}) async {
+  Future<List<Species>> getPublishedSpecies({String? search, bool forceRefresh = false}) async {
     if (search != null && search.trim().isNotEmpty) {
       final q = search.trim().toLowerCase();
       return speciesList

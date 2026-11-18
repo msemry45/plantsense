@@ -121,6 +121,15 @@ class Species {
 
   /// Returns localized description based on active language
   String? localizedDescription(bool isArabic) {
+    if (description != null && description!.isNotEmpty) {
+      final hasArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(description!);
+      if (isArabic && hasArabic) {
+        return description;
+      }
+      if (!isArabic && !hasArabic) {
+        return description;
+      }
+    }
     if (!isArabic) return description;
     switch (commonName.toLowerCase().trim()) {
       case 'tomato':
